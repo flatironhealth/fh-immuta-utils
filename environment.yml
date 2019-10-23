@@ -1,0 +1,23 @@
+name: fh-immuta-utils
+dependencies:
+  - python >=3.6
+  - pip
+  - boto3
+  - click
+  - hvac
+  - pre_commit
+  - psycopg2
+  - pyathena
+  - pydantic =0.32.2
+  - pytest
+  - pyyaml
+  - requests
+  - six
+  - sqlalchemy
+  - toolz
+  - tqdm
+  - urllib3
+  - pip:
+    - recommonmark
+    - sphinx
+    - sphinxcontrib.confluencebuilder

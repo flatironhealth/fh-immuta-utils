@@ -1,0 +1,41 @@
+repos:
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: master
+  hooks:
+    - id: trailing-whitespace
+- repo: https://github.com/python/black
+  rev: master
+  hooks:
+    - id: black
+      exclude : >
+        (?x)^(
+          immuta_utils/_version.py|
+          versioneer.py
+        )$
+- repo: https://github.com/pre-commit/mirrors-mypy
+  rev: master
+  hooks:
+    - id: mypy
+      exclude : >
+        (?x)^(
+          immuta_utils/_version.py|
+          setup.py|
+          versioneer.py|
+          scripts/.*|
+          doc/.*
+        )$
+# TODO: Enable this hook
+# - repo: https://github.com/PyCQA/pydocstyle
+#   rev: master
+#   hooks:
+#     - id: pydocstyle
+#       args:
+#         - –convention=numpy
+#       exclude : >
+#         (?x)^(
+#           tests/.*|
+#           scripts/.*|
+#           setup.py|
+#           s3_index_client/_version.py|
+#           versioneer.py
+#         )$
