@@ -26,7 +26,7 @@ requirements:
     - hvac
     - psycopg2
     - pyathena
-    - pydantic =0.32.2
+    - pydantic
     - pyyaml
     - requests
     - six
