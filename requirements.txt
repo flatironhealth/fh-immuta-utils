@@ -1,0 +1,13 @@
+boto3
+click
+hvac
+psycopg2
+pyathena
+pydantic
+pyyaml
+requests
+six
+sqlalchemy
+toolz
+tqdm
+urllib3
