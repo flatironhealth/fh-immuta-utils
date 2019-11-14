@@ -1,6 +1,5 @@
 package:
   name: fh-immuta-utils
-  #  version: "{{ GIT_DESCRIBE_TAG }}{% if GIT_DESCRIBE_NUMBER| int > 0 %}dev{{ GIT_DESCRIBE_NUMBER }}{% endif %}"
   version: "0.0.1"
 
 source:
@@ -10,10 +9,7 @@ build:
   script:
     - python -m pip install --no-deps --ignore-installed .
   entry_points:
-    - immuta_enroll = fh_immuta_utils.scripts.main:cli_entrypoint
-    - immuta_bulk_delete = fh_immuta_utils.scripts.bulk_delete_data_source:cli_entrypoint
-    - immuta_tag_data_sources = fh_immuta_utils.scripts.tag_existing_data_sources:cli_entrypoint
-    - immuta_manage_policies = fh_immuta_utils.scripts.manage_policies:cli_entrypoint
+    - fh-immuta-utils = fh_immuta_utils.scripts.cli:cli_main
 
 requirements:
   host:
@@ -42,5 +38,8 @@ test:
     - fh_immuta_utils
 
 about:
-  home: https://github.com/flatironhealth/immuta-utils
-  license: INTERNAL
+  home: https://github.com/flatironhealth/fh-immuta-utils
+  license: BSD-3
+  license_family: BSD
+  license_file: LICENSE.md
+

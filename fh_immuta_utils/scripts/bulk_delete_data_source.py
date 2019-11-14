@@ -10,7 +10,7 @@ from fh_immuta_utils.paginator import Paginator
 LOGGER = logging.getLogger(__name__)
 
 
-@click.command()
+@click.command(help="Bulk delete data sources that match a given prefix")
 @click.option("--config-file", required=True)
 @click.option(
     "--search-text",

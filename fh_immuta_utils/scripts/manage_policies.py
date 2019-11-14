@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from immuta_utils.client import ImmutaClient
 
 
-@click.command()
+@click.command(help="Create/Update policies that specify RBAC rules")
 @click.option("--config-file", required=True)
 @click.option(
     "--search-text",

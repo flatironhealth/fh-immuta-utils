@@ -12,6 +12,9 @@ with open("README.md", "r") as fh:
 setup(
     name=NAME,
     version="0.0.2",
+    entry_points={
+        "console_scripts": ["fh-immuta-utils = fh_immuta_utils.scripts.cli.main_cli"]
+    },
     description="Flatiron Immuta API",
     author_email="data-tooling@flatiron.com",
     url="https://github.com/flatironhealth/fh-immuta-utils",

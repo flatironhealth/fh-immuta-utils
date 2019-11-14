@@ -33,12 +33,12 @@ from fh_immuta_utils.data_source import (
 )
 
 if TYPE_CHECKING:
-    from immuta_utils.client import ImmutaClient
+    from fh_immuta_utils.client import ImmutaClient
 
 LOGGER = logging.getLogger(__name__)
 
 
-@click.command()
+@click.command(help="Enroll/update data sources")
 @click.option("--config-file", required=True)
 @click.option(
     "--glob-prefix",
