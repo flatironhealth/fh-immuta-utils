@@ -33,7 +33,7 @@ from fh_immuta_utils.data_source import (
 )
 
 if TYPE_CHECKING:
-    from immuta_utils.client import ImmutaClient
+    from fh_immuta_utils.client import ImmutaClient
 
 LOGGER = logging.getLogger(__name__)
 

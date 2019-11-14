@@ -27,7 +27,7 @@ To apply RBAC based on that tagging, you can run the following:
 
 ``` bash
 $ conda activate fh-immuta-utils
-$ python fh_immuta_utils/scripts/manage_policies.py --config-file foo.yml
+$ fh-immuta-utils policies --config-file foo.yml
 ```
 
 Running the script above will generate a new global policy named `phi.ssn` that will specify that
