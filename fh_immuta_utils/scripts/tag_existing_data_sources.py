@@ -16,7 +16,7 @@ from fh_immuta_utils.paginator import Paginator
 from fh_immuta_utils.tagging import Tagger
 
 
-@click.command()
+@click.command(help="Tag existing data sources based on provided tagging info")
 @click.option("--config-file", required=True)
 @click.option(
     "--search-text",

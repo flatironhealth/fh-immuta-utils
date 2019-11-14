@@ -12,12 +12,12 @@ from .tag_existing_data_sources import (
 )
 
 main_cli = click.Group()
-data_source_cli = click.Group("data-source")
+data_source_cli = click.Group("data-source", help="Manage data sources along with their tagging")
 data_source_cli.add_command(bulk_delete_data_source_command, "bulk-delete")
 data_source_cli.add_command(manage_data_sources_command, "manage")
 data_source_cli.add_command(tag_existing_data_sources_command, "tag-existing")
 main_cli.add_command(data_source_cli, "data-source")
-main_cli.add_command(manage_data_sources_command, "policies")
+main_cli.add_command(manage_policies_command, "policies")
 
 if __name__ == "__main__":
     main_cli()

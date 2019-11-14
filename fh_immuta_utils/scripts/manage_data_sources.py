@@ -38,7 +38,7 @@ if TYPE_CHECKING:
 LOGGER = logging.getLogger(__name__)
 
 
-@click.command()
+@click.command(help="Enroll/update data sources")
 @click.option("--config-file", required=True)
 @click.option(
     "--glob-prefix",
