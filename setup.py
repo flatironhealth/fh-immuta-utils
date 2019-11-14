@@ -3,26 +3,27 @@
 from setuptools import setup, find_packages  # noqa: H301
 
 NAME = "fh-immuta-utils"
-VERSION = "0.0.1"
-# To install the library, run the following
-#
-# python setup.py install
-#
-# prerequisite: setuptools
-# http://pypi.python.org/pypi/setuptools
 
-REQUIRES = ["urllib3 >= 1.15", "six >= 1.10", "certifi", "hvac", "python-dateutil"]
+
+with open("README.md", "r") as fh:
+    long_description = fh.read()
+
 
 setup(
     name=NAME,
-    version=VERSION,
+    version = '0.0.2',
     description="Flatiron Immuta API",
     author_email="data-tooling@flatiron.com",
-    url="",
-    install_requires=REQUIRES,
+    url="https://github.com/flatironhealth/fh-immuta-utils",
     packages=find_packages(),
     include_package_data=True,
-    long_description="""\
-    Wrapper around Immuta's API to manage data sources and permissions in Immuta.
-    """,
+    long_description=long_description,
+    long_description_content_type='text/markdown',
+    classifiers = [
+        "Programming Language :: Python :: 3 :: Only",
+        "License :: OSI Approved :: BSD License",
+        "Operating System :: OS Independent",
+        "Development Status :: 5 - Production/Stable",
+    ],
+    python_requires='>=3.6',
 )
