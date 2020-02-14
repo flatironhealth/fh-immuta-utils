@@ -409,7 +409,7 @@ class ImmutaClient(LoggingMixin):
         return handler_response.json()
 
     def create_global_policy(self, policy: GlobalPolicy) -> Union[int, bool]:
-        res = self._session.post("policy/global", data=policy.json())
+        res = self._session.post("policy/global", data=policy.json(by_alias=True))
         if res.status_code == 200:
             return res.json()["id"]
         if res.status_code == 422 and res.json()["validation"][0]["code"] == "unique":
@@ -420,7 +420,7 @@ class ImmutaClient(LoggingMixin):
     def update_global_policy(
         self, policy: GlobalPolicy, id: Optional[int]
     ) -> Dict[str, Any]:
-        res = self._session.put(f"policy/global/{id}", data=policy.json())
+        res = self._session.put(f"policy/global/{id}", data=policy.json(by_alias=True))
         res.raise_for_status()
         return res.json()
 
