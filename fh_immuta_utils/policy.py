@@ -121,7 +121,7 @@ class PolicyAction(BaseModel):
 class SubscriptionPolicyAction(BaseModel):
     type: str = "subscription"
     subscriptionType: str
-    exceptions: PolicyExceptions
+    exceptions: Optional[PolicyExceptions] = None
     allowDiscovery: bool = True
 
 
@@ -207,15 +207,16 @@ def make_policy_circumstance(
 def make_policy_object_from_json(json_policy: Dict[str, Any]) -> GlobalPolicy:
     circumstances = []
     exceptions: Optional[PolicyExceptions] = None
-    for circumstance in json_policy["circumstances"]:
-        if circumstance["type"] == "columnTags":
-            circumstances.append(ColumnTagCircumstance(**circumstance))
-        elif circumstance["type"] == "tags":
-            circumstances.append(TagCircumstance(**circumstance))
-        else:
-            raise TypeError(
-                f"Unsupported type for policy circumstance: {circumstance['type']}"
-            )
+    if json_policy["circumstances"] is not None:
+        for circumstance in json_policy["circumstances"]:
+            if circumstance["type"] == "columnTags":
+                circumstances.append(ColumnTagCircumstance(**circumstance))
+            elif circumstance["type"] == "tags":
+                circumstances.append(TagCircumstance(**circumstance))
+            else:
+                raise TypeError(
+                    f"Unsupported type for policy circumstance: {circumstance['type']}"
+                )
 
     actions = []
     for action in json_policy["actions"]:

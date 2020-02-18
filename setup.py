@@ -20,6 +20,17 @@ setup(
     url="https://github.com/flatironhealth/fh-immuta-utils",
     packages=find_packages(),
     include_package_data=True,
+    install_requires=[
+        "click",
+        "hvac",
+        "pydantic",
+        "PyYAML",
+        "requests",
+        "six",
+        "toolz",
+        "tqdm",
+        "urllib3",
+    ],
     long_description=long_description,
     long_description_content_type="text/markdown",
     classifiers=[
