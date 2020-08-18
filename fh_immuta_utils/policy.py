@@ -1,6 +1,6 @@
 from typing import Dict, Any, Optional, List, Set
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .tagging import Tagger
 
@@ -37,7 +37,9 @@ class GroupCondition(PolicyCondition):
         include: Set[str] = None,
         exclude: Set[str] = None,
         by_alias: bool = False,
-        skip_defaults: bool = False,
+        exclude_unset: bool = False,
+        exclude_defaults: bool = False,
+        exclude_none: bool = False,
     ) -> Dict[str, Any]:
         """
         The 'field' key should not exist in the payload if it has no value
@@ -51,7 +53,9 @@ class GroupCondition(PolicyCondition):
             include=include,
             exclude=exclude,
             by_alias=by_alias,
-            skip_defaults=skip_defaults,
+            exclude_unset=exclude_unset,
+            exclude_defaults=exclude_defaults,
+            exclude_none=exclude_none,
         )
 
 
@@ -88,16 +92,46 @@ class PolicyExceptions(BaseModel):
     conditions: List[PolicyCondition]
 
 
-class PolicyAction(BaseModel):
+class PolicyRuleConfig(BaseModel):
+    policy_fields: List[ColumnTag] = Field(..., alias="fields")
+    # class Config:
+    #     fields = {"policy_fields": "fields"}
+
+
+class MaskingConfig(BaseModel):
+    type: str
+    # Unsure what this is
+    metadata: Optional[Dict] = {}
+
+
+class MaskingRuleConfig(PolicyRuleConfig):
+    maskingConfig: MaskingConfig
+
+
+class PolicyRule(BaseModel):
     type: str
     exceptions: PolicyExceptions
+    config: PolicyRuleConfig
+
+
+class PolicyAction(BaseModel):
+    type: str
+
+
+class SubscriptionPolicyAction(BaseModel):
+    type: str = "subscription"
     subscriptionType: str
+    exceptions: Optional[PolicyExceptions] = None
     allowDiscovery: bool = True
 
 
-class MaskingAction(PolicyAction):
+class DataPolicyAction(PolicyAction):
+    rules: Optional[List[PolicyRule]] = None
+    description: Optional[str] = ""
+
+
+class MaskingAction(DataPolicyAction):
     type: str = "masking"
-    tags: List[ColumnTag]
 
 
 class GlobalPolicy(BaseModel):
@@ -116,7 +150,9 @@ class GlobalPolicy(BaseModel):
         include: Set[str] = None,
         exclude: Set[str] = None,
         by_alias: bool = False,
-        skip_defaults: bool = False,
+        exclude_unset: bool = False,
+        exclude_defaults: bool = False,
+        exclude_none: bool = False,
     ) -> Dict[str, Any]:
         # Remove keys that should not exist in the payload if they have no values
         exclude = set()
@@ -126,7 +162,9 @@ class GlobalPolicy(BaseModel):
             include=include,
             exclude=exclude,
             by_alias=by_alias,
-            skip_defaults=skip_defaults,
+            exclude_unset=exclude_unset,
+            exclude_defaults=exclude_defaults,
+            exclude_none=exclude_none,
         )
 
 
@@ -138,16 +176,18 @@ class GlobalDataPolicy(GlobalPolicy):
 class GlobalSubscriptionPolicy(GlobalPolicy):
     name: str
     type: str = "subscription"
-    actions: List[PolicyAction]
+    actions: List[SubscriptionPolicyAction]
 
 
-def make_policy_exceptions(iam_groups: List[str]) -> PolicyExceptions:
+def make_policy_exceptions(
+    iam_groups: List[str], operator: str = "or"
+) -> PolicyExceptions:
     conditions = []
     for group in iam_groups:
         # TODO: Generalize for other IAMs
         conditions.append(GroupCondition(group=PolicyGroup(name=group, iam="okta")))
     # TODO: Support other operators
-    return PolicyExceptions(operator="or", conditions=conditions)
+    return PolicyExceptions(operator=operator, conditions=conditions)
 
 
 def make_policy_circumstance(
@@ -167,15 +207,16 @@ def make_policy_circumstance(
 def make_policy_object_from_json(json_policy: Dict[str, Any]) -> GlobalPolicy:
     circumstances = []
     exceptions: Optional[PolicyExceptions] = None
-    for circumstance in json_policy["circumstances"]:
-        if circumstance["type"] == "columnTags":
-            circumstances.append(ColumnTagCircumstance(**circumstance))
-        elif circumstance["type"] == "tags":
-            circumstances.append(TagCircumstance(**circumstance))
-        else:
-            raise TypeError(
-                f"Unsupported type for policy circumstance: {circumstance['type']}"
-            )
+    if json_policy["circumstances"] is not None:
+        for circumstance in json_policy["circumstances"]:
+            if circumstance["type"] == "columnTags":
+                circumstances.append(ColumnTagCircumstance(**circumstance))
+            elif circumstance["type"] == "tags":
+                circumstances.append(TagCircumstance(**circumstance))
+            else:
+                raise TypeError(
+                    f"Unsupported type for policy circumstance: {circumstance['type']}"
+                )
 
     actions = []
     for action in json_policy["actions"]:
@@ -196,11 +237,14 @@ def make_policy_object_from_json(json_policy: Dict[str, Any]) -> GlobalPolicy:
         else:
             exceptions = None
 
-        action.pop("exceptions")
         if action["type"] == "masking":
-            actions.append(MaskingAction(**action, exceptions=exceptions))
+            actions.append(MaskingAction(**action, rules=action.pop("rules")))
+        elif action["type"] == "subscription":
+            actions.append(
+                SubscriptionPolicyAction(**action, exceptions=action.pop("exceptions"))
+            )
         else:
-            actions.append(PolicyAction(**action, exceptions=exceptions))
+            raise TypeError(f"Unknown type for policy action: {action['type']}")
 
     if json_policy["type"] == "subscription":
         return GlobalSubscriptionPolicy(
@@ -227,15 +271,56 @@ def make_policy_object_from_json(json_policy: Dict[str, Any]) -> GlobalPolicy:
 def make_global_subscription_policy(
     policy_name: str, tags: List[str], iam_groups: List[str], tagger: Tagger
 ) -> GlobalSubscriptionPolicy:
-    actions: List[PolicyAction] = []
+    actions: List[SubscriptionPolicyAction] = []
     actions.append(
-        PolicyAction(
+        SubscriptionPolicyAction(
             type="subscription",
             subscriptionType="policy",
             exceptions=make_policy_exceptions(iam_groups=iam_groups),
         )
     )
     return GlobalSubscriptionPolicy(
+        name=policy_name,
+        circumstances=make_policy_circumstance(tags=tags, tagger=tagger),
+        actions=actions,
+    )
+
+
+def make_policy_rule(
+    rule_type: str, iam_groups: List[str], tags: List[str], tagger: Tagger
+) -> PolicyRule:
+    config_rule_fields: List[ColumnTag] = []
+    for tag in tags:
+        config_rule_fields.append(
+            ColumnTag(name=tag, hasLeafNodes=tagger.is_root_tag(tag))
+        )
+
+    return PolicyRule(
+        type=rule_type,
+        exceptions=make_policy_exceptions(iam_groups=iam_groups, operator="and"),
+        # TODO: Support other types
+        config=MaskingRuleConfig(
+            fields=config_rule_fields,
+            maskingConfig=MaskingConfig(type="Consistent Value"),
+        ),
+    )
+
+
+def make_global_data_policy(
+    policy_name: str, tags: List[str], iam_groups: List[str], tagger: Tagger
+) -> GlobalDataPolicy:
+    actions: List[MaskingAction] = []
+    actions.append(
+        MaskingAction(
+            type="masking",
+            rules=[
+                make_policy_rule(
+                    rule_type="masking", iam_groups=iam_groups, tags=tags, tagger=tagger
+                )
+            ],
+        )
+    )
+    return GlobalDataPolicy(
         name=policy_name,
         circumstances=make_policy_circumstance(tags=tags, tagger=tagger),
         actions=actions,

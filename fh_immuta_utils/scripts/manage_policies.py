@@ -13,7 +13,7 @@ import click
 from fh_immuta_utils.client import get_client
 from fh_immuta_utils.config import parse_config
 from fh_immuta_utils.tagging import Tagger
-from fh_immuta_utils.policy import make_global_subscription_policy
+from fh_immuta_utils.policy import make_global_data_policy
 
 if TYPE_CHECKING:
     from immuta_utils.client import ImmutaClient
@@ -105,7 +105,7 @@ def create_or_update_policies(
         progress_iterator.set_description(desc=f"Tag: {tag_name}")
         iam_groups = tagger.tag_groups[tag_name]
         policy_name = f"{tag_name}_access_policy"
-        policy = make_global_subscription_policy(
+        policy = make_global_data_policy(
             policy_name=policy_name,
             tags=[tag_name],
             iam_groups=iam_groups,

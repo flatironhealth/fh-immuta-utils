@@ -11,15 +11,26 @@ with open("README.md", "r") as fh:
 
 setup(
     name=NAME,
-    version="0.0.3",
+    version="0.0.5",
     entry_points={
-        "console_scripts": ["fh-immuta-utils = fh_immuta_utils.scripts.cli.main_cli"]
+        "console_scripts": ["fh-immuta-utils = fh_immuta_utils.scripts.cli:main_cli"]
     },
     description="Flatiron Immuta API",
     author_email="data-tooling@flatiron.com",
     url="https://github.com/flatironhealth/fh-immuta-utils",
     packages=find_packages(),
     include_package_data=True,
+    install_requires=[
+        "click",
+        "hvac",
+        "pydantic",
+        "PyYAML",
+        "requests",
+        "six",
+        "toolz",
+        "tqdm",
+        "urllib3",
+    ],
     long_description=long_description,
     long_description_content_type="text/markdown",
     classifiers=[
