@@ -93,10 +93,7 @@ class PolicyExceptions(BaseModel):
 
 
 class PolicyRuleConfig(BaseModel):
-    policy_fields: List[ColumnTag] = Field(..., alias="fields")
-    # class Config:
-    #     fields = {"policy_fields": "fields"}
-
+    policy_fields: Optional[List[ColumnTag]] = Field(required=False, alias="fields")
 
 class MaskingConfig(BaseModel):
     type: str
@@ -110,7 +107,8 @@ class MaskingRuleConfig(PolicyRuleConfig):
 
 class PolicyRule(BaseModel):
     type: str
-    exceptions: PolicyExceptions
+    # Policies will not necessarily have any exceptions ("apply to everyone")
+    exceptions: Optional[PolicyExceptions]
     config: PolicyRuleConfig
 
 
@@ -170,13 +168,15 @@ class GlobalPolicy(BaseModel):
 
 class GlobalDataPolicy(GlobalPolicy):
     type: str = "data"
-    actions: List[MaskingAction]
+    # If falling back to a Dict is a no-go, then this can get fairly complex:
+    actions: List[MaskingAction|Dict]
 
 
 class GlobalSubscriptionPolicy(GlobalPolicy):
     name: str
     type: str = "subscription"
-    actions: List[SubscriptionPolicyAction]
+    # If falling back to a Dict is a no-go, then this can get fairly complex:
+    actions: List[SubscriptionPolicyAction|Dict]
 
 
 def make_policy_exceptions(
@@ -244,7 +244,7 @@ def make_policy_object_from_json(json_policy: Dict[str, Any]) -> GlobalPolicy:
                 SubscriptionPolicyAction(**action, exceptions=action.pop("exceptions"))
             )
         else:
-            raise TypeError(f"Unknown type for policy action: {action['type']}")
+            actions.append(action)
 
     if json_policy["type"] == "subscription":
         return GlobalSubscriptionPolicy(
