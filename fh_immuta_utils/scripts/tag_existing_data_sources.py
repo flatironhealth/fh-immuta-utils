@@ -69,8 +69,7 @@ def main(config_file: str, search_text: str, dry_run: bool, debug: bool):
             )
             continue
         logging.debug(
-            f"Enriched columns for {data_source['name']}:"
-            f" {dictionary.dict()['metadata']}"
+            f"Enriched columns for {data_source['name']}: {dictionary.dict()['metadata']}"
         )
         logging.info(f"Change detected. Updating data source {data_source['name']}.")
         dictionary.metadata = enriched_columns

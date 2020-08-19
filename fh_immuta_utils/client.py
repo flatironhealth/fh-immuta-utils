@@ -152,8 +152,7 @@ class ImmutaClient(LoggingMixin):
         resp = self._session.get(path, *args, **kwargs)
         if resp.status_code != 200:
             self.log.error(
-                f"Error in request. Response status: {resp.status_code}, text:"
-                f" {resp.text}"
+                f"Error in request. Response status: {resp.status_code}, text: {resp.text}"
             )
         resp.raise_for_status()
         return resp.json()
@@ -269,8 +268,7 @@ class ImmutaClient(LoggingMixin):
             handlers = handler.dict(by_alias=True, skip_defaults=True)
         else:
             raise RuntimeError(
-                "Invalid format for given blob handler. Expected either a list or a"
-                " BlobHandler object"
+                "Invalid format for given blob handler. Expected either a list or a BlobHandler object"
             )
         post_body = {
             "handler": handlers,
@@ -444,8 +442,7 @@ class ImmutaClient(LoggingMixin):
         data_source = self.get_data_source(id=id, name=name)
         if data_source["deleted"]:
             self.log.warning(
-                f"Data source \"{data_source['name']}\" id: {data_source['id']} is"
-                " disabled already"
+                f"Data source \"{data_source['name']}\" id: {data_source['id']} is disabled already"
             )
         else:
             self.delete(f"dataSource/{data_source['id']}")
@@ -464,8 +461,7 @@ class ImmutaClient(LoggingMixin):
         data_source = self.get_data_source(id=id, name=name)
         if not data_source["deleted"]:
             self.log.warning(
-                f"Data source \"{data_source['name']}\" id: {data_source['id']} is"
-                " enabled already"
+                f"Data source \"{data_source['name']}\" id: {data_source['id']} is enabled already"
             )
         else:
             self.put(f"dataSource/{data_source['id']}", data={"deleted": False})
@@ -499,8 +495,7 @@ class ImmutaClient(LoggingMixin):
         except HTTPError as e:
             if e.response.status_code == 404:
                 self.log.warning(
-                    f"Data source {id or name} not found, it might have been deleted"
-                    " already"
+                    f"Data source {id or name} not found, it might have been deleted already"
                 )
             else:
                 raise

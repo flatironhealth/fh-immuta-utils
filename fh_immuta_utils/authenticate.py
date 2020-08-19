@@ -156,7 +156,7 @@ class ImmutaRequestsAuth(requests.auth.AuthBase):
 
 
 def build_auth_scheme(**kwargs):
-    """Generates an AuthScheme instance based on the given input.
+    """ Generates an AuthScheme instance based on the given input.
     When the required set of parameters is found for an AuthScheme implementation, it will be returned.
     The order or precedence is: ApiKeyAuth, UsernamePasswordAuth, and OAuth2Auth.
     If no AuthScheme implementation is found for the given parameters, a UnknownAuthenticationScheme exception is thrown
