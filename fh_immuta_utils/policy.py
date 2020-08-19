@@ -168,14 +168,12 @@ class GlobalPolicy(BaseModel):
 
 class GlobalDataPolicy(GlobalPolicy):
     type: str = "data"
-    # If falling back to a Dict is a no-go, then this can get fairly complex:
     actions: List[MaskingAction|Dict]
 
 
 class GlobalSubscriptionPolicy(GlobalPolicy):
     name: str
     type: str = "subscription"
-    # If falling back to a Dict is a no-go, then this can get fairly complex:
     actions: List[SubscriptionPolicyAction|Dict]
 
 
