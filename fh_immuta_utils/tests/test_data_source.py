@@ -30,18 +30,14 @@ IMMUTA_NAME_TESTS = [
         schema="foo",
         table=f"{'a'*(ds.MAX_IMMUTA_NAME_LIMIT - 7)}",
         user_prefix="",
-        expected_name=(
-            f"{ds.PREFIX_MAP['PostgreSQL']}_foo_{'a'*(ds.MAX_IMMUTA_NAME_LIMIT - 7)}"
-        ),
+        expected_name=f"{ds.PREFIX_MAP['PostgreSQL']}_foo_{'a'*(ds.MAX_IMMUTA_NAME_LIMIT - 7)}",
     ),
     NameTestKeys(
         handler_type="PostgreSQL",
         schema="foo",
         table=f"{'a'*ds.MAX_IMMUTA_NAME_LIMIT}",
         user_prefix="",
-        expected_name=(
-            f"{ds.PREFIX_MAP['PostgreSQL']}_foo_{'a'*(ds.MAX_IMMUTA_NAME_LIMIT - 7)}"
-        ),
+        expected_name=f"{ds.PREFIX_MAP['PostgreSQL']}_foo_{'a'*(ds.MAX_IMMUTA_NAME_LIMIT - 7)}",
     ),
     NameTestKeys(
         handler_type="Redshift",
@@ -86,18 +82,14 @@ POSTGRES_NAME_TESTS = [
         schema="foo",
         table=f"{'a'*(ds.MAX_POSTGRES_NAME_LIMIT - 7)}",
         user_prefix="",
-        expected_name=(
-            f"{ds.PREFIX_MAP['PostgreSQL']}_foo_{'a'*(ds.MAX_POSTGRES_NAME_LIMIT - 7)}"
-        ),
+        expected_name=f"{ds.PREFIX_MAP['PostgreSQL']}_foo_{'a'*(ds.MAX_POSTGRES_NAME_LIMIT - 7)}",
     ),
     NameTestKeys(
         handler_type="PostgreSQL",
         schema="foo",
         table=f"{'a'*ds.MAX_POSTGRES_NAME_LIMIT}",
         user_prefix="",
-        expected_name=(
-            f"{ds.PREFIX_MAP['PostgreSQL']}_foo_{'a'*(ds.MAX_POSTGRES_NAME_LIMIT - 7)}"
-        ),
+        expected_name=f"{ds.PREFIX_MAP['PostgreSQL']}_foo_{'a'*(ds.MAX_POSTGRES_NAME_LIMIT - 7)}",
     ),
     NameTestKeys(
         handler_type="Redshift",

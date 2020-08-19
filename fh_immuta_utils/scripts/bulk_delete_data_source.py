@@ -57,7 +57,7 @@ def main(
     elif hard_delete:
         logging.info(
             f"Hard deleting {len(data_sources_to_delete)} data sources. "
-            "The data sources will not be able to be restored in the future"
+            f"The data sources will not be able to be restored in the future"
         )
         for data_source in tqdm(data_sources_to_delete, desc="Deleting"):
             logging.debug(f"Hard deleting {data_source['name']}")
@@ -65,7 +65,7 @@ def main(
     else:
         logging.info(
             f"Disabling {len(data_sources_to_delete)} data sources. "
-            "The data sources can be restored in the future"
+            f"The data sources can be restored in the future"
         )
         for data_source in tqdm(data_sources_to_delete, desc="Disabling"):
             logging.debug(f"Disabling {data_source['name']}")

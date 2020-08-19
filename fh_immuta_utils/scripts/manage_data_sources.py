@@ -121,8 +121,8 @@ def main(config_file: str, glob_prefix: str, debug: bool, dry_run: bool) -> bool
 def get_tables_in_database(
     client: "ImmutaClient", config: Dict[str, Any]
 ) -> Dict[str, List[Dict[str, str]]]:
-    """Returns a list of schema_name: [tables...] mapping in the database
-    specified by the config"""
+    """ Returns a list of schema_name: [tables...] mapping in the database
+    specified by the config """
     # Grab list of all tables in all schemas in the database
     tables_in_database = client.get_table_names(config)
     # Group the tables per schema
