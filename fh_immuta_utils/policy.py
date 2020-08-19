@@ -95,6 +95,7 @@ class PolicyExceptions(BaseModel):
 class PolicyRuleConfig(BaseModel):
     policy_fields: Optional[List[ColumnTag]] = Field(required=False, alias="fields")
 
+
 class MaskingConfig(BaseModel):
     type: str
     # Unsure what this is
@@ -168,13 +169,13 @@ class GlobalPolicy(BaseModel):
 
 class GlobalDataPolicy(GlobalPolicy):
     type: str = "data"
-    actions: List[MaskingAction|Dict]
+    actions: List[Dict]
 
 
 class GlobalSubscriptionPolicy(GlobalPolicy):
     name: str
     type: str = "subscription"
-    actions: List[SubscriptionPolicyAction|Dict]
+    actions: List[Dict]
 
 
 def make_policy_exceptions(
@@ -234,15 +235,7 @@ def make_policy_object_from_json(json_policy: Dict[str, Any]) -> GlobalPolicy:
             )
         else:
             exceptions = None
-
-        if action["type"] == "masking":
-            actions.append(MaskingAction(**action, rules=action.pop("rules")))
-        elif action["type"] == "subscription":
-            actions.append(
-                SubscriptionPolicyAction(**action, exceptions=action.pop("exceptions"))
-            )
-        else:
-            actions.append(action)
+        actions.append(action)
 
     if json_policy["type"] == "subscription":
         return GlobalSubscriptionPolicy(
