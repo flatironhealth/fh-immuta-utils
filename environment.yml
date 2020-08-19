@@ -4,10 +4,7 @@ dependencies:
   - pip
   - boto3
   - click
-  - hvac
-  - pre_commit
   - psycopg2
-  - pyathena
   - pydantic
   - pytest
   - pyyaml
@@ -18,6 +15,9 @@ dependencies:
   - tqdm
   - urllib3
   - pip:
+    - hvac
+    - pre_commit
+    - pyathena
     - recommonmark
     - sphinx
     - sphinxcontrib.confluencebuilder
