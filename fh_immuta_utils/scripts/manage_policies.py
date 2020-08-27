@@ -23,7 +23,10 @@ if TYPE_CHECKING:
 @click.option("--config-file", required=True)
 @click.option(
     "--search-text",
-    help="When deleting, will match all policies that contain this string anywhere in their name. Ignored otherwise.",
+    help=(
+        "When deleting, will match all policies that contain this string anywhere in"
+        " their name. Ignored otherwise."
+    ),
 )
 @click.option(
     "--dry-run",
