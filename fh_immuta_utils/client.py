@@ -519,5 +519,6 @@ class ImmutaClient(LoggingMixin):
         res.raise_for_status()
         return True
 
+
 def get_client(base_url: str, auth_config: Dict[str, Any], **kwargs) -> ImmutaClient:
     return ImmutaClient(base_url=f"https://{base_url}", **auth_config)

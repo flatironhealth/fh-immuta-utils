@@ -49,7 +49,7 @@ credentials:
   source: ENV
   key: USER_PASSWORD
   username: service_user
-# Tags to apply directly to data sources created by this config file. 
+# Tags to apply directly to data sources created by this config file.
 # Key follows the pattern <prefix>_<schema>, where prefix matches with PREFIX_MAP in data_source.py
 tags:
   pg_baz: ["tag1", "tag2"]
@@ -85,7 +85,7 @@ credentials:
   # Read from an instance of Hashicorp Vault
   source: VAULT
   key: path/to/vault/secret
-# Tags to apply directly to data sources created by this config file. 
+# Tags to apply directly to data sources created by this config file.
 # Key follows the pattern <prefix>_<schema>, where prefix matches with PREFIX_MAP in data_source.py
 tags:
   ath_foo: ["tag1", "tag2"]

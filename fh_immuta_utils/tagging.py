@@ -41,14 +41,22 @@ class Tagger(object):
             logging.debug("Reading tag file: %s", tag_file)
             with open(tag_file) as handle:
                 contents = yaml.safe_load(handle)
-                self.tag_map_datadict = {**self.tag_map_datadict, **contents.get("TAG_MAP", {})}
+                self.tag_map_datadict = {
+                    **self.tag_map_datadict,
+                    **contents.get("TAG_MAP", {}),
+                }
                 self.tag_groups = {**self.tag_groups, **contents.get("TAG_GROUPS", {})}
 
-        for datasource_file in glob.glob(os.path.join(config_root, "enrolled_datasets", "*.yml")):
+        for datasource_file in glob.glob(
+            os.path.join(config_root, "enrolled_datasets", "*.yml")
+        ):
             logging.debug("Reading enrolled data source file: %s", datasource_file)
             with open(datasource_file) as handle:
                 contents = yaml.safe_load(handle)
-                self.tag_map_datasource = {**self.tag_map_datasource, **contents.get("tags", {})}
+                self.tag_map_datasource = {
+                    **self.tag_map_datasource,
+                    **contents.get("tags", {}),
+                }
 
     def get_tags_for_column(self, column_name: str) -> List[str]:
         return self.tag_map_datadict.get(column_name, [])

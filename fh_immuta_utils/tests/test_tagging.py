@@ -12,10 +12,8 @@ TAG_GROUPS = {
     "foobar": ["group_foobar"],
     "bar.baz": ["group_baz"],
 }
-DATA_SOURCE_TAGS = {
-    "ath_succeed": ["eeny", "meeny"],
-    "rs_fail": ["miny"]
-}
+DATA_SOURCE_TAGS = {"ath_succeed": ["eeny", "meeny"], "rs_fail": ["miny"]}
+
 
 @pytest.fixture
 def tagger():
@@ -46,7 +44,7 @@ def test_tags_to_make(tagger):
         ("bar", ["bar.baz"]),
         ("eeny", []),
         ("meeny", []),
-        ("miny", [])
+        ("miny", []),
     ]
 
 
