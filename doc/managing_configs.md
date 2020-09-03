@@ -49,6 +49,11 @@ credentials:
   source: ENV
   key: USER_PASSWORD
   username: service_user
+# Tags to apply directly to data sources created by this config file. 
+# Key follows the pattern <prefix>_<schema>, where prefix matches with PREFIX_MAP in data_source.py
+tags:
+  pg_baz: ["tag1", "tag2"]
+  pg_foo: ["tag3", "tag4"]
 ```
 
 **Note:** For AWS Redshift, use the same format as above, replacing the `handler_type` value with `Redshift`.
@@ -80,9 +85,13 @@ credentials:
   # Read from an instance of Hashicorp Vault
   source: VAULT
   key: path/to/vault/secret
+# Tags to apply directly to data sources created by this config file. 
+# Key follows the pattern <prefix>_<schema>, where prefix matches with PREFIX_MAP in data_source.py
+tags:
+  ath_foo: ["tag1", "tag2"]
 ```
 
-# Tags
+# Data Source Column Tags
 
 Information about what tags to create and how to attach them to columns in data sources should be specified through YAML files created under a `tags` directory within `config_root`.
 
