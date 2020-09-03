@@ -123,7 +123,7 @@ class Tagger(object):
     def make_tags(self, client: "ImmutaClient") -> None:
         LOGGER.debug("Creating tags")
         for (root_tag, children) in self.tags_to_make():
-            LOGGER.info(f"Creating root tag: {root_tag}, children: {children}")
+            LOGGER.debug(f"Creating root tag: {root_tag}, children: {children}")
             client.create_tag(
                 tag_data=self.create_message_body_for_tag_creation(
                     root_tag=root_tag, children=children
