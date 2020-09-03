@@ -52,7 +52,7 @@ credentials:
 # Tags to apply directly to data sources created by this config file.
 # Key follows the pattern <prefix>_<schema>, where prefix matches with PREFIX_MAP in data_source.py
 tags:
-  pg_baz: ["tag1", "tag2"]
+  pg_baz: ["tag1", "tag2.subtag2"]
   pg_foo: ["tag3", "tag4"]
 ```
 
@@ -88,7 +88,7 @@ credentials:
 # Tags to apply directly to data sources created by this config file.
 # Key follows the pattern <prefix>_<schema>, where prefix matches with PREFIX_MAP in data_source.py
 tags:
-  ath_foo: ["tag1", "tag2"]
+  ath_foo: ["tag1", "tag2.subtag2"]
 ```
 
 # Data Source Column Tags

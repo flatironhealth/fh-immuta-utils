@@ -12,7 +12,7 @@ TAG_GROUPS = {
     "foobar": ["group_foobar"],
     "bar.baz": ["group_baz"],
 }
-DATA_SOURCE_TAGS = {"ath_succeed": ["eeny", "meeny"], "rs_fail": ["miny"]}
+DATA_SOURCE_TAGS = {"ath_succeed": ["eeny", "meeny.miny"], "rs_fail": ["moe"]}
 
 
 @pytest.fixture
@@ -43,15 +43,15 @@ def test_tags_to_make(tagger):
         ("foobar", []),
         ("bar", ["bar.baz"]),
         ("eeny", []),
-        ("meeny", []),
-        ("miny", []),
+        ("meeny", ["meeny.miny"]),
+        ("moe", []),
     ]
 
 
 def test_get_tags_for_data_source(tagger):
     expected = [
         {"name": "eeny", "source": "curated"},
-        {"name": "meeny", "source": "curated"},
+        {"name": "meeny.miny", "source": "curated"},
     ]
     assert tagger.get_tags_for_data_source(name="ath_succeed_foo") == expected
     assert tagger.get_tags_for_data_source(name="ath_fail_bar") == []
