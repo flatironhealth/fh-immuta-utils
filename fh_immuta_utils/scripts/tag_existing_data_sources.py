@@ -61,18 +61,25 @@ def main(config_file: str, search_text: str, dry_run: bool, debug: bool):
         progress_iterator.set_description(
             desc=f"Tagging ID: {data_source['id']}, Name: {data_source['name']} :"
         )
+        data_source_tags = tagger.get_tags_for_data_source(name=data_source['name'])
+        if data_source_tags:
+            logging.debug(f"Adding data source tags to {data_source['name']}.")
+            if not dry_run:
+                client.tag_data_source(
+                    id=data_source["id"], tag_data=data_source_tags
+                )
         dictionary = client.get_data_source_dictionary(id=data_source["id"])
         enriched_columns = tagger.enrich_columns_with_tagging(dictionary.metadata)
         if enriched_columns == dictionary.metadata:
             logging.debug(
-                f"No change for data source: {data_source['name']}. Skipping."
+                f"No change to column tags for data source: {data_source['name']}. Skipping."
             )
             continue
         logging.debug(
             f"Enriched columns for {data_source['name']}:"
             f" {dictionary.dict()['metadata']}"
         )
-        logging.info(f"Change detected. Updating data source {data_source['name']}.")
+        logging.info(f"Change detected to column tags. Updating data source {data_source['name']}'s data dictionary.")
         dictionary.metadata = enriched_columns
         if not dry_run:
             client.update_data_source_dictionary(
