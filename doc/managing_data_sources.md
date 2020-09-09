@@ -28,8 +28,7 @@ If data sources are created using fh-immuta-utils, they'll be tagged during crea
 Note that tagging is not done for data sources that are bulk-created, as the endpoint used in Immuta's API for that purpose
 doesn't support applying tags during creation.
 
-
-To ensure that tags are kept up-to-date in existing data sources, you can run the following script:
+To ensure that data source and column tags are kept up-to-date in existing data sources, you can run the following script:
 
 ``` bash
 $ fh-immuta-utils data-sources tag-existing --config-file foo.yml

@@ -12,14 +12,16 @@ TAG_GROUPS = {
     "foobar": ["group_foobar"],
     "bar.baz": ["group_baz"],
 }
+DATA_SOURCE_TAGS = {"ath_succeed": ["eeny", "meeny.miny"], "rs_fail": ["moe"]}
 
 
 @pytest.fixture
 def tagger():
     with mock.patch("fh_immuta_utils.tagging.Tagger.read_configs", return_value=None):
         obj = tg.Tagger(config_root="")
-        obj.tag_map = TAG_MAP
+        obj.tag_map_datadict = TAG_MAP
         obj.tag_groups = TAG_GROUPS
+        obj.tag_map_datasource = DATA_SOURCE_TAGS
     return obj
 
 
@@ -40,7 +42,19 @@ def test_tags_to_make(tagger):
         ("foo", []),
         ("foobar", []),
         ("bar", ["bar.baz"]),
+        ("eeny", []),
+        ("meeny", ["meeny.miny"]),
+        ("moe", []),
     ]
+
+
+def test_get_tags_for_data_source(tagger):
+    expected = [
+        {"name": "eeny", "source": "curated"},
+        {"name": "meeny.miny", "source": "curated"},
+    ]
+    assert tagger.get_tags_for_data_source(name="ath_succeed_foo") == expected
+    assert tagger.get_tags_for_data_source(name="ath_fail_bar") == []
 
 
 TagMsgBody = namedtuple("TagMsgBody", ["root_tag", "children", "expected"])

@@ -26,10 +26,14 @@ class Tagger(object):
 
     def __init__(self, config_root: str) -> None:
         # column_name: [tag1, tag2, ...]
-        self.tag_map: Dict[str, List[str]] = {}
+        self.tag_map_datadict: Dict[str, List[str]] = {}
+
+        # prefix_schema: [tag1, tag2, ...]
+        self.tag_map_datasource: Dict[str, List[str]] = {}
 
         # tag_name: [iam_group_1, iam_group_2, ...]
         self.tag_groups: Dict[str, List[str]] = {}
+
         self.read_configs(config_root=config_root)
 
     def read_configs(self, config_root: str) -> None:
@@ -37,11 +41,39 @@ class Tagger(object):
             logging.debug("Reading tag file: %s", tag_file)
             with open(tag_file) as handle:
                 contents = yaml.safe_load(handle)
-                self.tag_map = {**self.tag_map, **contents.get("TAG_MAP", {})}
+                self.tag_map_datadict = {
+                    **self.tag_map_datadict,
+                    **contents.get("TAG_MAP", {}),
+                }
                 self.tag_groups = {**self.tag_groups, **contents.get("TAG_GROUPS", {})}
 
+        for datasource_file in glob.glob(
+            os.path.join(config_root, "enrolled_datasets", "*.yml")
+        ):
+            logging.debug("Reading enrolled data source file: %s", datasource_file)
+            with open(datasource_file) as handle:
+                contents = yaml.safe_load(handle)
+                self.tag_map_datasource = {
+                    **self.tag_map_datasource,
+                    **contents.get("tags", {}),
+                }
+
     def get_tags_for_column(self, column_name: str) -> List[str]:
-        return self.tag_map.get(column_name, [])
+        return self.tag_map_datadict.get(column_name, [])
+
+    def get_tags_for_data_source(self, name: str) -> List[Dict[str, Any]]:
+        """
+        Finds tags whose key matches the prefix of the data source name.
+        e.g. if key is "ath_foo", all data sources with prefix "ath_foo" will get that key's tags
+        :param name: data source name
+        :return: list of tag dicts
+        """
+        tags = []
+        for k, v in self.tag_map_datasource.items():
+            if name.startswith(k):
+                for tag in v:
+                    tags.append({"name": tag, "source": "curated"})
+        return tags
 
     def is_root_tag(self, tag_to_check: str) -> bool:
         for tag in self.tag_groups:
@@ -58,8 +90,10 @@ class Tagger(object):
         Yields a dict of either str or List[str] where the key is a parent tag
         and the value is a list of child tags if any, or the parent tag itself if no children.
         """
+
         all_tags: Dict[str, List[str]] = defaultdict(list)
-        for tag_list in self.tag_map.values():
+        datasource_datadict_tags = {**self.tag_map_datadict, **self.tag_map_datasource}
+        for tag_list in datasource_datadict_tags.values():
             for tag in tag_list:
                 parent = tag.split(".")[0]
                 if tag not in all_tags[parent]:
