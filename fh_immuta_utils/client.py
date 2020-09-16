@@ -508,6 +508,17 @@ class ImmutaClient(LoggingMixin):
         assert isinstance(id, int)
         return id
 
+    def tag_data_source(self, id: int, tag_data: List[Dict[str, Any]]) -> bool:
+        """
+        Adds tags to the data source directly, not to columns within the data source.
+        :param id: data source id
+        :param tag_data: list of tag dicts to apply to the data source
+        :return: True
+        """
+        res = self._session.post(f"tag/datasource/{id}", json=tag_data)
+        res.raise_for_status()
+        return True
+
 
 def get_client(base_url: str, auth_config: Dict[str, Any], **kwargs) -> ImmutaClient:
     return ImmutaClient(base_url=f"https://{base_url}", **auth_config)
