@@ -7,11 +7,6 @@ import fh_immuta_utils.tagging as tg
 import fh_immuta_utils.data_source as ds
 
 TAG_MAP = {"col_foo": ["foo", "foobar"], "col_bar": ["bar.baz"]}
-TAG_GROUPS = {
-    "foo": ["group_foo", "group_foobar"],
-    "foobar": ["group_foobar"],
-    "bar.baz": ["group_baz"],
-}
 DATA_SOURCE_TAGS = {"ath_succeed": ["eeny", "meeny.miny"], "rs_fail": ["moe"]}
 
 
@@ -20,7 +15,6 @@ def tagger():
     with mock.patch("fh_immuta_utils.tagging.Tagger.read_configs", return_value=None):
         obj = tg.Tagger(config_root="")
         obj.tag_map_datadict = TAG_MAP
-        obj.tag_groups = TAG_GROUPS
         obj.tag_map_datasource = DATA_SOURCE_TAGS
     return obj
 
