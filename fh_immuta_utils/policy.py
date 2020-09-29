@@ -200,18 +200,21 @@ class GlobalSubscriptionPolicy(GlobalPolicy):
     actions: List[Dict]
 
 
-class DataPolicyConfig:
+class PolicyConfig:
+    """
+    Wrapper around managing policy configuration
+    """
     def __init__(self, config_root: str) -> None:
         self.data_policy_config = {}
 
         self.read_configs(config_root=config_root)
 
     def read_configs(self, config_root: str) -> None:
-        for policy_file in glob.glob(os.path.join(config_root, "policies/data", "*.yml")):
-            logging.debug("Reading data policy file: %s", policy_file)
-            with open(policy_file) as handle:
+        for data_policy_file in glob.glob(os.path.join(config_root, "policies/data", "*.yml")):
+            logging.debug("Reading data policy file: %s", data_policy_file)
+            with open(data_policy_file) as handle:
                 contents = yaml.safe_load(handle)
-                self.data_policy_config = {**self.data_policy_config, **contents}
+                self.data_policy_config = {**self.data_policy_config, **contents.get("DATA_POLICIES", {})}
 
 
 def make_policy_exceptions(
@@ -241,7 +244,12 @@ def make_policy_circumstance(
 
 def build_policy_circumstance(
     tag: str, tagger: Tagger, circumstance_type: str, operator: str = "or"
-) -> PolicyCircumstance:
+) -> Any:
+    try:
+        circumstance_type = CircumstanceType(circumstance_type)
+    except ValueError:
+        raise
+
     if circumstance_type is CircumstanceType.TAG:
         return TagCircumstance(
             operator=operator,
@@ -252,7 +260,6 @@ def build_policy_circumstance(
             operator=operator,
             columnTag=ColumnTag(name=tag, hasLeafNodes=tagger.is_root_tag(tag)),
         )
-    return PolicyCircumstance()
 
 
 def make_policy_object_from_json(json_policy: Dict[str, Any]) -> GlobalPolicy:
@@ -351,46 +358,55 @@ def make_policy_rule(
 
 def make_data_policy_action(
     action_type: str, tags: List[str], conditions: Dict, tagger: Tagger
-) -> DataPolicyAction:
-    if action_type == ActionType.MASKING:
+) -> MaskingAction:
+    try:
+        action_type = ActionType(action_type)
+    except ValueError:
+        raise
+
+    if action_type is ActionType.MASKING:
         rules = []
         for condition in conditions.values():
             rules.append(
                 make_policy_rule(
-                    rule_type=ActionType.MASKING,
+                    rule_type="masking",
                     iam_groups=condition['iam_groups'],
                     tags=tags,
                     tagger=tagger,
                 )
             )
         return MaskingAction(
-                type=ActionType.MASKING,
-                rules=rules,
-            )
-    return DataPolicyAction()
+            type=ActionType.MASKING.value,
+            rules=rules,
+        )
 
 
 def make_global_data_policy(
     policy_name: str, policy_config: Dict, tagger: Tagger
 ) -> GlobalDataPolicy:
-    actions: List[DataPolicyAction] = []
-    circumstances: List[PolicyCircumstance] = []
+    """
+    Returns a GlobalDataPolicy object containing lists of actions and circumstances.
+    Actions define what the policy restricts, how it restricts, and for whom it restricts.
+    Circumstances define where and how the policy is applied to data sources in Immuta.
+    """
+    actions: List[MaskingAction] = []
+    circumstances: List[Any] = []
 
-    for action_attribute in policy_config['actions'].values():
+    for action_grouping in policy_config['actions'].values():
         action = make_data_policy_action(
-            action_type=action_attribute['actionType'],
-            tags=action_attribute['tags'],
-            conditions=action_attribute['conditions'],
+            action_type=action_grouping['actionType'],
+            tags=action_grouping['tags'],
+            conditions=action_grouping['conditions'],
             tagger=tagger,
         )
         actions.append(action)
 
-    for circumstance_attribute in policy_config['circumstances'].values():
-        for tag in circumstance_attribute['tags']:
+    for circumstance_grouping in policy_config['circumstances'].values():
+        for tag in circumstance_grouping['tags']:
             circumstance = build_policy_circumstance(
                 tag=tag,
                 tagger=tagger,
-                circumstance_type=circumstance_attribute['circumstanceType'],
+                circumstance_type=circumstance_grouping['circumstanceType'],
             )
             circumstances.append(circumstance)
 
