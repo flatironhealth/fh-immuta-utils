@@ -1,0 +1,33 @@
+DATA_POLICIES:
+  correct_policy:
+    actions:
+      - type: "masking"
+        description: ""
+        rules:
+          - type: "masking"
+            exceptions:
+              operator: "and"
+              conditions:
+                - type: "groups"
+                  iam_groups: ["group1"]
+            config:
+              fields:
+                tags: ["tag1"]
+          - type: "masking"
+            exceptions:
+              operator: "and"
+              conditions:
+                - type: "groups"
+                  iam_groups: ["group2", "group3"]
+                - type: "groups"
+                  iam_groups: ["group4", "group5", "group6"]
+            config:
+              fields:
+                tags: ["tag2", "tag3"]
+    circumstances:
+      - operator: "or"
+        type: "columnTags"
+        tags: ["tag1"]
+      - operator: "or"
+        type: "columnTags"
+        tags: ["tag2", "tag3"]
