@@ -24,7 +24,7 @@ DATA_POLICIES:
               operator: "and"
               conditions:
                 - type: "groups"
-                  iam_groups: ["group1"]  # except if user is a member of "group1"  
+                  iam_groups: ["group1"]  # except if user is a member of "group1"
     circumstances:
       - operator: "or"
         type: "columnTags"
@@ -38,7 +38,7 @@ $ conda activate fh-immuta-utils
 $ fh-immuta-utils policies --config-file foo.yml
 ```
 
-Running the script above will generate a new global data policy named `policy_1_access_policy` that will: 
+Running the script above will generate a new global data policy named `policy_1_access_policy` that will:
 * **action** --> mask fields tagged `tag1` using hashing for everyone except when user is a member of group `group1`
 * **circumstance** --> on data sources with columns tagged `tag1`
 

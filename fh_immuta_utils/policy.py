@@ -12,13 +12,13 @@ from .tagging import Tagger
 
 @unique
 class CircumstanceType(Enum):
-    TAG = 'tags'
-    COLUMN_TAG = 'columnTags'
+    TAG = "tags"
+    COLUMN_TAG = "columnTags"
 
 
 @unique
 class ActionType(Enum):
-    MASKING = 'masking'
+    MASKING = "masking"
 
 
 class PolicyGroup(BaseModel):
@@ -204,16 +204,22 @@ class PolicyConfig:
     """
     Wrapper around managing policy configuration
     """
+
     def __init__(self, config_root: str) -> None:
-        self.data_policy_config = {}
+        self.data_policy_config: Dict[str, Any] = {}
         self.read_configs(config_root=config_root)
 
     def read_configs(self, config_root: str) -> None:
-        for data_policy_file in glob.glob(os.path.join(config_root, "policies/data", "*.yml")):
+        for data_policy_file in glob.glob(
+            os.path.join(config_root, "policies/data", "*.yml")
+        ):
             logging.debug("Reading data policy file: %s", data_policy_file)
             with open(data_policy_file) as handle:
                 contents = yaml.safe_load(handle)
-                self.data_policy_config = {**self.data_policy_config, **contents.get("DATA_POLICIES", {})}
+                self.data_policy_config = {
+                    **self.data_policy_config,
+                    **contents.get("DATA_POLICIES", {}),
+                }
 
 
 def make_policy_exceptions(
@@ -241,7 +247,7 @@ def make_policy_circumstance(
 
 
 def build_policy_circumstance(
-    tag: str, tagger: Tagger, circumstance_type: str, operator: str = "or"
+    tag: str, tagger: Tagger, circumstance_type: Any, operator: str = "or"
 ) -> Any:
     try:
         circumstance_type = CircumstanceType(circumstance_type)
@@ -335,7 +341,10 @@ def make_global_subscription_policy(
 
 
 def make_policy_rule(
-    rule_type: str, exceptions_config: Dict, config_field_tags: List[str], tagger: Tagger
+    rule_type: str,
+    exceptions_config: Dict,
+    config_field_tags: List[str],
+    tagger: Tagger,
 ) -> PolicyRule:
     config_rule_fields: List[ColumnTag] = []
     # TODO: handle other types of config
@@ -346,13 +355,13 @@ def make_policy_rule(
 
     # TODO: pass in conditions instead of iam_groups to make_policy_exceptions after subscription policy refactor
     iam_groups = []
-    for condition in exceptions_config['conditions']:
-        iam_groups.extend(condition['iam_groups'])
+    for condition in exceptions_config["conditions"]:
+        iam_groups.extend(condition["iam_groups"])
     return PolicyRule(
         type=rule_type,
         exceptions=make_policy_exceptions(
             iam_groups=iam_groups,
-            operator=exceptions_config['operator'],
+            operator=exceptions_config["operator"],
         ),
         # TODO: Support other config types
         config=MaskingRuleConfig(
@@ -363,7 +372,7 @@ def make_policy_rule(
 
 
 def make_data_policy_action(
-    action_type: str, rules_config: Dict, tagger: Tagger
+    action_type: Any, rules_config: Dict, tagger: Tagger
 ) -> MaskingAction:
     try:
         action_type = ActionType(action_type)
@@ -374,9 +383,9 @@ def make_data_policy_action(
     for rule in rules_config:
         rules.append(
             make_policy_rule(
-                rule_type=rule['type'],
-                exceptions_config=rule['exceptions'],
-                config_field_tags=rule['config']['fields']['tags'],
+                rule_type=rule["type"],
+                exceptions_config=rule["exceptions"],
+                config_field_tags=rule["config"]["fields"]["tags"],
                 tagger=tagger,
             )
         )
@@ -387,9 +396,7 @@ def make_data_policy_action(
             rules=rules,
         )
     else:
-        raise TypeError(
-            f"Unsupported type for action: {action_type}"
-        )
+        raise TypeError(f"Unsupported type for action: {action_type}")
 
 
 def make_global_data_policy(
@@ -404,10 +411,10 @@ def make_global_data_policy(
     circumstances: List[Any] = []
 
     if policy_config.get("actions"):
-        for action_grouping in policy_config['actions']:
+        for action_grouping in policy_config["actions"]:
             action = make_data_policy_action(
-                action_type=action_grouping['type'],
-                rules_config=action_grouping['rules'],
+                action_type=action_grouping["type"],
+                rules_config=action_grouping["rules"],
                 tagger=tagger,
             )
             actions.append(action)
@@ -415,13 +422,13 @@ def make_global_data_policy(
         raise KeyError(f"Missing actions for data policy: {policy_name}")
 
     if policy_config.get("circumstances"):
-        for circumstance_grouping in policy_config['circumstances']:
-            for tag in circumstance_grouping['tags']:
+        for circumstance_grouping in policy_config["circumstances"]:
+            for tag in circumstance_grouping["tags"]:
                 circumstance = build_policy_circumstance(
                     tag=tag,
                     tagger=tagger,
-                    circumstance_type=circumstance_grouping['type'],
-                    operator=circumstance_grouping['operator'],
+                    circumstance_type=circumstance_grouping["type"],
+                    operator=circumstance_grouping["operator"],
                 )
                 circumstances.append(circumstance)
     else:
