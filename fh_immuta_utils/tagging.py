@@ -31,9 +31,6 @@ class Tagger(object):
         # prefix_schema: [tag1, tag2, ...]
         self.tag_map_datasource: Dict[str, List[str]] = {}
 
-        # tag_name: [iam_group_1, iam_group_2, ...]
-        self.tag_groups: Dict[str, List[str]] = {}
-
         self.read_configs(config_root=config_root)
 
     def read_configs(self, config_root: str) -> None:
@@ -45,7 +42,6 @@ class Tagger(object):
                     **self.tag_map_datadict,
                     **contents.get("TAG_MAP", {}),
                 }
-                self.tag_groups = {**self.tag_groups, **contents.get("TAG_GROUPS", {})}
 
         for datasource_file in glob.glob(
             os.path.join(config_root, "enrolled_datasets", "*.yml")
@@ -76,14 +72,20 @@ class Tagger(object):
         return tags
 
     def is_root_tag(self, tag_to_check: str) -> bool:
-        for tag in self.tag_groups:
+        """
+        Determines if tag is the true root by checking all available tags from config
+        """
+        all_tags = {**self.tag_map_datadict, **self.tag_map_datasource}
+        tag_list = []
+        for k, v in all_tags.items():
+            tag_list.append(v)
+        # flatten the list of lists into a single list of all items
+        flat_tag_list = [item for sublist in tag_list for item in sublist]
+
+        for tag in flat_tag_list:
             if "." in tag and tag.split(".")[0] == tag_to_check:
                 return True
         return False
-
-    def get_allowed_groups_for_tag(self, tag: str) -> List[str]:
-        """ Returns IAM groups allowed access to view things with given tag """
-        return self.tag_groups.get(tag, [])
 
     def tags_to_make(self) -> Iterator[Tuple[str, List[str]]]:
         """

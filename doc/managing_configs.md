@@ -106,13 +106,4 @@ TAG_MAP:
   dob:
     - phi.dob
 
-# Mapping of tag name to list of IAM groups that should have permissions to see data with said tag.
-TAG_GROUPS:
-  phi.ssn:
-    - "SSN IAM group"
-    - "Governor IAM group"
-  phi.dob:
-    - "DOB IAM group"
-    - "Governor IAM group"
-
 ```

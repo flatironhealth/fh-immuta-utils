@@ -1,8 +1,24 @@
+import os
 from typing import Dict, Any, Optional, List, Set
+from enum import Enum, unique
+import logging
+import glob
 
+import yaml
 from pydantic import BaseModel, Field
 
 from .tagging import Tagger
+
+
+@unique
+class CircumstanceType(Enum):
+    TAG = "tags"
+    COLUMN_TAG = "columnTags"
+
+
+@unique
+class ActionType(Enum):
+    MASKING = "masking"
 
 
 class PolicyGroup(BaseModel):
@@ -11,6 +27,12 @@ class PolicyGroup(BaseModel):
 
 
 class ColumnTag(BaseModel):
+    name: str
+    # Set to True if it's a root tag
+    hasLeafNodes: bool
+
+
+class DataSourceTag(BaseModel):
     name: str
     # Set to True if it's a root tag
     hasLeafNodes: bool
@@ -83,7 +105,7 @@ class ColumnTagCircumstance(PolicyCircumstance):
 
 class TagCircumstance(PolicyCircumstance):
     type: str = "tags"
-    tag: ColumnTag
+    tag: DataSourceTag
 
 
 class PolicyExceptions(BaseModel):
@@ -178,14 +200,35 @@ class GlobalSubscriptionPolicy(GlobalPolicy):
     actions: List[Dict]
 
 
+class PolicyConfig:
+    """
+    Wrapper around managing policy configuration
+    """
+
+    def __init__(self, config_root: str) -> None:
+        self.data_policy_config: Dict[str, Any] = {}
+        self.read_configs(config_root=config_root)
+
+    def read_configs(self, config_root: str) -> None:
+        for data_policy_file in glob.glob(
+            os.path.join(config_root, "policies/data", "*.yml")
+        ):
+            logging.debug("Reading data policy file: %s", data_policy_file)
+            with open(data_policy_file) as handle:
+                contents = yaml.safe_load(handle)
+                self.data_policy_config = {
+                    **self.data_policy_config,
+                    **contents.get("DATA_POLICIES", {}),
+                }
+
+
 def make_policy_exceptions(
     iam_groups: List[str], operator: str = "or"
 ) -> PolicyExceptions:
     conditions = []
     for group in iam_groups:
-        # TODO: Generalize for other IAMs
+        # TODO: Generalize for other IAMs and conditions
         conditions.append(GroupCondition(group=PolicyGroup(name=group, iam="okta")))
-    # TODO: Support other operators
     return PolicyExceptions(operator=operator, conditions=conditions)
 
 
@@ -201,6 +244,26 @@ def make_policy_circumstance(
             )
         )
     return circumstances
+
+
+def build_policy_circumstance(
+    tag: str, tagger: Tagger, circumstance_type: Any, operator: str = "or"
+) -> Any:
+    try:
+        circumstance_type = CircumstanceType(circumstance_type)
+    except ValueError:
+        raise
+
+    if circumstance_type is CircumstanceType.TAG:
+        return TagCircumstance(
+            operator=operator,
+            tag=DataSourceTag(name=tag, hasLeafNodes=tagger.is_root_tag(tag)),
+        )
+    elif circumstance_type is CircumstanceType.COLUMN_TAG:
+        return ColumnTagCircumstance(
+            operator=operator,
+            columnTag=ColumnTag(name=tag, hasLeafNodes=tagger.is_root_tag(tag)),
+        )
 
 
 def make_policy_object_from_json(json_policy: Dict[str, Any]) -> GlobalPolicy:
@@ -278,18 +341,29 @@ def make_global_subscription_policy(
 
 
 def make_policy_rule(
-    rule_type: str, iam_groups: List[str], tags: List[str], tagger: Tagger
+    rule_type: str,
+    exceptions_config: Dict,
+    config_field_tags: List[str],
+    tagger: Tagger,
 ) -> PolicyRule:
     config_rule_fields: List[ColumnTag] = []
-    for tag in tags:
+    # TODO: handle other types of config
+    for tag in config_field_tags:
         config_rule_fields.append(
             ColumnTag(name=tag, hasLeafNodes=tagger.is_root_tag(tag))
         )
 
+    # TODO: pass in conditions instead of iam_groups to make_policy_exceptions after subscription policy refactor
+    iam_groups = []
+    for condition in exceptions_config["conditions"]:
+        iam_groups.extend(condition["iam_groups"])
     return PolicyRule(
         type=rule_type,
-        exceptions=make_policy_exceptions(iam_groups=iam_groups, operator="and"),
-        # TODO: Support other types
+        exceptions=make_policy_exceptions(
+            iam_groups=iam_groups,
+            operator=exceptions_config["operator"],
+        ),
+        # TODO: Support other config types
         config=MaskingRuleConfig(
             fields=config_rule_fields,
             maskingConfig=MaskingConfig(type="Consistent Value"),
@@ -297,22 +371,71 @@ def make_policy_rule(
     )
 
 
-def make_global_data_policy(
-    policy_name: str, tags: List[str], iam_groups: List[str], tagger: Tagger
-) -> GlobalDataPolicy:
-    actions: List[MaskingAction] = []
-    actions.append(
-        MaskingAction(
-            type="masking",
-            rules=[
-                make_policy_rule(
-                    rule_type="masking", iam_groups=iam_groups, tags=tags, tagger=tagger
-                )
-            ],
+def make_data_policy_action(
+    action_type: Any, rules_config: Dict, tagger: Tagger
+) -> MaskingAction:
+    try:
+        action_type = ActionType(action_type)
+    except ValueError:
+        raise
+
+    rules = []
+    for rule in rules_config:
+        rules.append(
+            make_policy_rule(
+                rule_type=rule["type"],
+                exceptions_config=rule["exceptions"],
+                config_field_tags=rule["config"]["fields"]["tags"],
+                tagger=tagger,
+            )
         )
-    )
+
+    if action_type is ActionType.MASKING:
+        return MaskingAction(
+            type=ActionType.MASKING.value,
+            rules=rules,
+        )
+    else:
+        raise TypeError(f"Unsupported type for action: {action_type}")
+
+
+def make_global_data_policy(
+    policy_name: str, policy_config: Dict, tagger: Tagger
+) -> GlobalDataPolicy:
+    """
+    Returns a GlobalDataPolicy object containing lists of actions and circumstances.
+    Actions define what the policy restricts, how it restricts, and for whom it restricts.
+    Circumstances define where and how the policy is applied to data sources in Immuta.
+    """
+    actions: List[MaskingAction] = []
+    circumstances: List[Any] = []
+
+    if policy_config.get("actions"):
+        for action_grouping in policy_config["actions"]:
+            action = make_data_policy_action(
+                action_type=action_grouping["type"],
+                rules_config=action_grouping["rules"],
+                tagger=tagger,
+            )
+            actions.append(action)
+    else:
+        raise KeyError(f"Missing actions for data policy: {policy_name}")
+
+    if policy_config.get("circumstances"):
+        for circumstance_grouping in policy_config["circumstances"]:
+            for tag in circumstance_grouping["tags"]:
+                circumstance = build_policy_circumstance(
+                    tag=tag,
+                    tagger=tagger,
+                    circumstance_type=circumstance_grouping["type"],
+                    operator=circumstance_grouping["operator"],
+                )
+                circumstances.append(circumstance)
+    else:
+        raise KeyError(f"Missing circumstances for data policy: {policy_name}")
+
     return GlobalDataPolicy(
         name=policy_name,
-        circumstances=make_policy_circumstance(tags=tags, tagger=tagger),
+        circumstances=circumstances,
         actions=actions,
     )
