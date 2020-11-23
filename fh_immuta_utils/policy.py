@@ -143,7 +143,7 @@ class SubscriptionPolicyAction(BaseModel):
     type: str = "subscription"
     subscriptionType: str
     exceptions: Optional[PolicyExceptions] = None
-    allowDiscovery: bool = True
+    allowDiscovery: bool = False
 
 
 class DataPolicyAction(PolicyAction):
@@ -195,21 +195,22 @@ class GlobalDataPolicy(GlobalPolicy):
 
 
 class GlobalSubscriptionPolicy(GlobalPolicy):
-    name: str
     type: str = "subscription"
+    staged: bool = True
     actions: List[Dict]
 
 
 class PolicyConfig:
     """
-    Wrapper around managing policy configuration
+    Wrapper around managing data & subscription policy configuration
     """
 
     def __init__(self, config_root: str) -> None:
         self.data_policy_config: Dict[str, Any] = {}
+        self.subscription_policy_config: Dict[str, Any] = {}
         self.read_configs(config_root=config_root)
 
-    def read_configs(self, config_root: str) -> None:
+    def _read_data_configs(self, config_root: str) -> None:
         for data_policy_file in glob.glob(
             os.path.join(config_root, "policies/data", "*.yml")
         ):
@@ -220,6 +221,24 @@ class PolicyConfig:
                     **self.data_policy_config,
                     **contents.get("DATA_POLICIES", {}),
                 }
+
+    def _read_subscription_configs(self, config_root: str) -> None:
+        for subscription_policy_file in glob.glob(
+            os.path.join(config_root, "policies/subscription", "*.yml")
+        ):
+            logging.debug(
+                "Reading subscription policy file: %s", subscription_policy_file
+            )
+            with open(subscription_policy_file) as handle:
+                contents = yaml.safe_load(handle)
+                self.subscription_policy_config = {
+                    **self.subscription_policy_config,
+                    **contents.get("SUBSCRIPTION_POLICIES", {}),
+                }
+
+    def read_configs(self, config_root: str) -> None:
+        self._read_data_configs(config_root=config_root)
+        self._read_subscription_configs(config_root=config_root)
 
 
 def make_policy_exceptions(
@@ -233,20 +252,6 @@ def make_policy_exceptions(
 
 
 def make_policy_circumstance(
-    tags: List[str], tagger: Tagger
-) -> List[PolicyCircumstance]:
-    circumstances = []
-    for tag in tags:
-        circumstances.append(
-            ColumnTagCircumstance(
-                operator="or",
-                columnTag=ColumnTag(name=tag, hasLeafNodes=tagger.is_root_tag(tag)),
-            )
-        )
-    return circumstances
-
-
-def build_policy_circumstance(
     tag: str, tagger: Tagger, circumstance_type: Any, operator: str = "or"
 ) -> Any:
     try:
@@ -322,21 +327,59 @@ def make_policy_object_from_json(json_policy: Dict[str, Any]) -> GlobalPolicy:
         raise TypeError(f"Unsupported type for Global policy: {json_policy['type']}")
 
 
-def make_global_subscription_policy(
-    policy_name: str, tags: List[str], iam_groups: List[str], tagger: Tagger
-) -> GlobalSubscriptionPolicy:
-    actions: List[SubscriptionPolicyAction] = []
-    actions.append(
-        SubscriptionPolicyAction(
-            type="subscription",
-            subscriptionType="policy",
-            exceptions=make_policy_exceptions(iam_groups=iam_groups),
-        )
+def make_subscription_policy_action(
+    exceptions_config: Dict, allow_discovery: bool, tagger: Tagger
+) -> SubscriptionPolicyAction:
+
+    iam_groups = []
+    for condition in exceptions_config["conditions"]:
+        iam_groups.extend(condition["iam_groups"])
+    return SubscriptionPolicyAction(
+        type="subscription",
+        subscriptionType="policy",
+        allowDiscovery=allow_discovery,
+        exceptions=make_policy_exceptions(
+            iam_groups=iam_groups, operator=exceptions_config["operator"]
+        ),
     )
+
+
+def make_global_subscription_policy(
+    policy_name: str, policy_config: Dict, tagger: Tagger
+) -> GlobalSubscriptionPolicy:
+
+    actions: List[SubscriptionPolicyAction] = []
+
+    if policy_config.get("actions"):
+        for action_grouping in policy_config["actions"]:
+            action = make_subscription_policy_action(
+                exceptions_config=action_grouping["exceptions"],
+                allow_discovery=action_grouping.get("allowDiscovery", False),
+                tagger=tagger,
+            )
+            actions.append(action)
+    else:
+        raise KeyError(f"Missing actions for subscription policy: {policy_name}")
+
+    circumstances: List[Any] = []
+    if policy_config.get("circumstances"):
+        for circumstance_grouping in policy_config["circumstances"]:
+            for tag in circumstance_grouping["tags"]:
+                circumstance = make_policy_circumstance(
+                    tag=tag,
+                    tagger=tagger,
+                    circumstance_type=circumstance_grouping["type"],
+                    operator=circumstance_grouping["operator"],
+                )
+                circumstances.append(circumstance)
+    else:
+        raise KeyError(f"Missing circumstances for subscription policy: {policy_name}")
+
     return GlobalSubscriptionPolicy(
         name=policy_name,
-        circumstances=make_policy_circumstance(tags=tags, tagger=tagger),
+        circumstances=circumstances,
         actions=actions,
+        staged=policy_config.get("staged", True),
     )
 
 
@@ -424,7 +467,7 @@ def make_global_data_policy(
     if policy_config.get("circumstances"):
         for circumstance_grouping in policy_config["circumstances"]:
             for tag in circumstance_grouping["tags"]:
-                circumstance = build_policy_circumstance(
+                circumstance = make_policy_circumstance(
                     tag=tag,
                     tagger=tagger,
                     circumstance_type=circumstance_grouping["type"],

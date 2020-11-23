@@ -17,20 +17,30 @@ def tagger():
 
 
 @pytest.fixture
-def data_policy_dict():
+def policy_dict():
     return pol.PolicyConfig(
         config_root=f"{os.path.dirname(os.path.abspath(__file__))}/fixtures"
     )
 
 
 @pytest.fixture
-def data_policy_actions_dict(data_policy_dict):
-    return data_policy_dict.data_policy_config["correct_policy"]["actions"]
+def data_policy_actions_dict(policy_dict):
+    return policy_dict.data_policy_config["correct_policy"]["actions"]
 
 
 @pytest.fixture
-def data_policy_circumstances_dict(data_policy_dict):
-    return data_policy_dict.data_policy_config["correct_policy"]["circumstances"]
+def data_policy_circumstances_dict(policy_dict):
+    return policy_dict.data_policy_config["correct_policy"]["circumstances"]
+
+
+@pytest.fixture
+def subscription_policy_actions_dict(policy_dict):
+    return policy_dict.subscription_policy_config["valid_db_sub_policy"]["actions"]
+
+
+@pytest.fixture
+def subscription_policy_staged_bool(policy_dict):
+    return policy_dict.subscription_policy_config["valid_db_sub_policy"]["staged"]
 
 
 def test_make_policy_exceptions(data_policy_actions_dict):
@@ -46,14 +56,14 @@ def test_make_policy_exceptions(data_policy_actions_dict):
     assert exceptions == expected_exceptions
 
 
-def test_build_policy_circumstance(data_policy_circumstances_dict, tagger):
+def test_make_policy_circumstance(data_policy_circumstances_dict, tagger):
     circumstance_type = data_policy_circumstances_dict[0]["type"]
     tags = data_policy_circumstances_dict[0]["tags"]
     expected_circumstance = pol.ColumnTagCircumstance(
         operator="or",
         columnTag=pol.ColumnTag(name=tags[0], hasLeafNodes=tagger.is_root_tag(tags[0])),
     )
-    circumstance = pol.build_policy_circumstance(
+    circumstance = pol.make_policy_circumstance(
         tag=tags[0],
         tagger=tagger,
         circumstance_type=circumstance_type,
@@ -61,11 +71,11 @@ def test_build_policy_circumstance(data_policy_circumstances_dict, tagger):
     assert circumstance == expected_circumstance
 
 
-def test_build_policy_circumstance_bad_type(data_policy_circumstances_dict, tagger):
+def test_make_policy_circumstance_bad_type(data_policy_circumstances_dict, tagger):
     circumstance_type = "foo"
     tags = data_policy_circumstances_dict[0]["tags"]
     with pytest.raises(ValueError):
-        return pol.build_policy_circumstance(
+        return pol.make_policy_circumstance(
             tag=tags[0],
             tagger=tagger,
             circumstance_type=circumstance_type,
@@ -177,3 +187,25 @@ def test_make_data_policy_action_bad_type(data_policy_actions_dict, tagger):
             rules_config=rules_config,
             tagger=tagger,
         )
+
+
+def test_make_subscription_policy_action(subscription_policy_actions_dict, tagger):
+    exceptions_config = subscription_policy_actions_dict[0]["exceptions"]
+    exception_conditions = exceptions_config["conditions"]
+    iam_groups = exception_conditions[0]["iam_groups"]
+    expected_action = pol.SubscriptionPolicyAction(
+        type="subscription",
+        subscriptionType="policy",
+        allowDiscovery=False,
+        exceptions=pol.make_policy_exceptions(
+            iam_groups=iam_groups, operator=exceptions_config["operator"]
+        ),
+    )
+    action = pol.make_subscription_policy_action(
+        exceptions_config, subscription_policy_actions_dict[0]["allowDiscovery"], tagger
+    )
+    assert action == expected_action
+
+
+def test_subscription_policy_staged(subscription_policy_staged_bool):
+    assert subscription_policy_staged_bool == False

@@ -1,0 +1,15 @@
+---
+SUBSCRIPTION_POLICIES:
+  valid_db_sub_policy:
+    staged: false
+    actions:
+      - exceptions:
+          operator: "or"
+          conditions:
+            - type: "groups"
+              iam_groups: ["group01"]
+        allowDiscovery: false
+    circumstances:
+      - operator: "or"
+        type: "tags"
+        tags: ["group01"]
