@@ -329,7 +329,10 @@ def make_policy_object_from_json(json_policy: Dict[str, Any]) -> GlobalPolicy:
 
 
 def make_subscription_policy_action(
-    exceptions_config: Dict, allow_discovery: bool, automatic_subscription: bool, tagger: Tagger
+    exceptions_config: Dict,
+    allow_discovery: bool,
+    automatic_subscription: bool,
+    tagger: Tagger,
 ) -> SubscriptionPolicyAction:
 
     iam_groups = []
@@ -357,7 +360,9 @@ def make_global_subscription_policy(
             action = make_subscription_policy_action(
                 exceptions_config=action_grouping["exceptions"],
                 allow_discovery=action_grouping.get("allowDiscovery", False),
-                automatic_subscription=action_grouping.get("automaticSubscription", True),
+                automatic_subscription=action_grouping.get(
+                    "automaticSubscription", True
+                ),
                 tagger=tagger,
             )
             actions.append(action)

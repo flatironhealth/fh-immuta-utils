@@ -194,7 +194,9 @@ def test_make_subscription_policy_action(subscription_policy_actions_dict, tagge
     exception_conditions = exceptions_config["conditions"]
     iam_groups = exception_conditions[0]["iam_groups"]
     allow_discovery = subscription_policy_actions_dict[0]["allowDiscovery"]
-    automatic_subscription = subscription_policy_actions_dict[0]["automaticSubscription"]
+    automatic_subscription = subscription_policy_actions_dict[0][
+        "automaticSubscription"
+    ]
 
     expected_action = pol.SubscriptionPolicyAction(
         type="subscription",
