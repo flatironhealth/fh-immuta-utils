@@ -193,16 +193,20 @@ def test_make_subscription_policy_action(subscription_policy_actions_dict, tagge
     exceptions_config = subscription_policy_actions_dict[0]["exceptions"]
     exception_conditions = exceptions_config["conditions"]
     iam_groups = exception_conditions[0]["iam_groups"]
+    allow_discovery = subscription_policy_actions_dict[0]["allowDiscovery"]
+    automatic_subscription = subscription_policy_actions_dict[0]["automaticSubscription"]
+
     expected_action = pol.SubscriptionPolicyAction(
         type="subscription",
         subscriptionType="policy",
         allowDiscovery=False,
+        automaticSubscription=True,
         exceptions=pol.make_policy_exceptions(
             iam_groups=iam_groups, operator=exceptions_config["operator"]
         ),
     )
     action = pol.make_subscription_policy_action(
-        exceptions_config, subscription_policy_actions_dict[0]["allowDiscovery"], tagger
+        exceptions_config, allow_discovery, automatic_subscription, tagger
     )
     assert action == expected_action
 
