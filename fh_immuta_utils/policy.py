@@ -23,7 +23,7 @@ class ActionType(Enum):
 
 class PolicyGroup(BaseModel):
     name: str
-    iam: str
+    iam: Optional[str] = ""
 
 
 class ColumnTag(BaseModel):
