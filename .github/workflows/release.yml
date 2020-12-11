@@ -1,0 +1,26 @@
+name: Release
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag name to release'
+        required: true
+
+jobs:
+
+  release:
+    name: Create Release From Tag
+    runs-on: ubuntu-latest
+    steps:
+      - name: Initialize tag via push
+        if: github.event_name == 'push'
+        run: echo "VER_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
+
+      - name: Initialize tag via manual dispatch
+        if: github.event_name == 'workflow_dispatch'
+        run: echo "VER_TAG=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
+
+      - run: echo $VER_TAG
