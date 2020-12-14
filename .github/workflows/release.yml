@@ -23,4 +23,46 @@ jobs:
         if: github.event_name == 'workflow_dispatch'
         run: echo "VER_TAG=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
 
-      - run: echo $VER_TAG
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Build Asset
+        run: zip -j -r -v gen/project-${VER_TAG}.zip stuff/*
+
+      - name: Release Notes
+        run: |
+          expected="release_notes/v${VER_TAG}.md"
+          if [ -e "$expected" ]
+          then
+            echo "BODY_PATH=$expected" >> $GITHUB_ENV
+          else
+            generated=gen/v${VER_TAG}.md
+            echo "Release version ${VER_TAG}" > $generated
+            echo "BODY_PATH=$generated" >> $GITHUB_ENV
+          fi
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ env.VER_TAG }}
+          release_name: v${{ env.VER_TAG }}
+          body_path: ${{ env.BODY_PATH }}
+
+      - name: Upload Asset
+        id: upload_asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: gen/project-${{ env.VER_TAG }}.zip
+          asset_name: project-${{ env.VER_TAG }}.zip
+          asset_content_type: application/zip
