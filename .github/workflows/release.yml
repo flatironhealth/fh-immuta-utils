@@ -31,8 +31,27 @@ jobs:
         with:
           python-version: 3.8
 
-      - name: Build Asset
-        run: zip -j -r -v gen/project-${VER_TAG}.zip stuff/*
+      - name: Build Release
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install setuptools wheel twine
+
+          python setup.py sdist bdist_wheel
+
+          # expected_asset=fh_immuta_utils-${VER_TAG}.tar.gz
+          # for testing, we will use fake version numbers that don't match the built package
+          # so we're hardcoding this for testing purposes
+          expected_asset=fh_immuta_utils-0.2.0.tar.gz
+
+          if [ -e "dist/${expected_asset}" ]
+          then
+            echo "RELEASE_ASSET=${expected_asset}" >> $GITHUB_ENV
+          else
+            exit 1
+          fi
+
+      - name: Test Wheel
+        run: python -m twine check dist/*
 
       - name: Release Notes
         run: |
@@ -63,6 +82,12 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: gen/project-${{ env.VER_TAG }}.zip
-          asset_name: project-${{ env.VER_TAG }}.zip
-          asset_content_type: application/zip
+          asset_path: dist/${{ env.RELEASE_ASSET }}
+          asset_name: ${{ env.RELEASE_ASSET }}
+          asset_content_type: application/gzip
+
+      # - name: Publish a Python distribution to PyPI
+      #   uses: pypa/gh-action-pypi-publish@master
+      #   with:
+      #     user: __token__
+      #     password: ${{ secrets.PYPI_API_TOKEN }}
