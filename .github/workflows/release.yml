@@ -38,10 +38,7 @@ jobs:
 
           python setup.py sdist bdist_wheel
 
-          # expected_asset=fh_immuta_utils-${VER_TAG}.tar.gz
-          # for testing, we will use fake version numbers that don't match the built package
-          # so we're hardcoding this for testing purposes
-          expected_asset=fh-immuta-utils-0.2.0.tar.gz
+          expected_asset=fh_immuta_utils-${VER_TAG}.tar.gz
 
           if [ -e "dist/${expected_asset}" ]
           then
@@ -86,8 +83,8 @@ jobs:
           asset_name: ${{ env.RELEASE_ASSET }}
           asset_content_type: application/gzip
 
-      # - name: Publish a Python distribution to PyPI
-      #   uses: pypa/gh-action-pypi-publish@master
-      #   with:
-      #     user: __token__
-      #     password: ${{ secrets.PYPI_API_TOKEN }}
+      - name: Publish a Python distribution to PyPI
+        uses: pypa/gh-action-pypi-publish@master
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}
