@@ -1,6 +1,7 @@
 # How to Use
 
 ## In your PR
+- If `@vNext.md` doesn't exist, create it.
 - Update `@vNext.md` with relevant changes being made (add to any other changes).
 - See previous releases and/or [changelog.md](https://changelog.md/) for inspiration/guidelines.
 
