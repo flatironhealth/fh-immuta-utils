@@ -68,6 +68,7 @@ SUBSCRIPTION_POLICIES:
             - type: "groups"
               iam_groups: ["group01"] # except if the user is member of "group01"
         allowDiscovery: false
+        automaticSubscription: true
     circumstances:
       - operator: "or"
         type: "tags"
