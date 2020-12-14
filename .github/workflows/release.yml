@@ -38,7 +38,7 @@ jobs:
 
           python setup.py sdist bdist_wheel
 
-          expected_asset=fh_immuta_utils-${VER_TAG}.tar.gz
+          expected_asset=fh-immuta-utils-${VER_TAG}.tar.gz
 
           if [ -e "dist/${expected_asset}" ]
           then
