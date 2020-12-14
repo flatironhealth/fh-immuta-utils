@@ -60,7 +60,7 @@ jobs:
           then
             echo "BODY_PATH=$expected" >> $GITHUB_ENV
           else
-            generated=gen/v${VER_TAG}.md
+            generated=build/v${VER_TAG}.md
             echo "Release version ${VER_TAG}" > $generated
             echo "BODY_PATH=$generated" >> $GITHUB_ENV
           fi
