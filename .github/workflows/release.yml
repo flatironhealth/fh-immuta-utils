@@ -41,7 +41,7 @@ jobs:
           # expected_asset=fh_immuta_utils-${VER_TAG}.tar.gz
           # for testing, we will use fake version numbers that don't match the built package
           # so we're hardcoding this for testing purposes
-          expected_asset=fh_immuta_utils-0.2.0.tar.gz
+          expected_asset=fh-immuta-utils-0.2.0.tar.gz
 
           if [ -e "dist/${expected_asset}" ]
           then
