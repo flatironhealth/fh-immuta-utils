@@ -237,7 +237,7 @@ def make_bulk_create_objects(
         blobHandlerType=config["handler_type"], recordFormat="json", type="queryable"
     )
     schema_evo = SchemaEvolutionMetadata(
-        disabled=not config["schema_evolution"], ownerProfileId=0  # TODO: fix
+        disabled=config["disable_schema_evolution"], ownerProfileId=0  # TODO: fix
     )
     return ds, handlers, schema_evo
 
@@ -282,7 +282,7 @@ def to_immuta_objects(
         # owner="foo",
     )
     schema_evo = SchemaEvolutionMetadata(
-        disabled=not config["schema_evolution"], ownerProfileId=0  # TODO: fix
+        disabled=config["disable_schema_evolution"], ownerProfileId=0  # TODO: fix
     )
     return ds, handler, schema_evo
 
