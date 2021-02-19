@@ -30,7 +30,7 @@ from fh_immuta_utils.data_source import (
     to_immuta_objects,
     make_handler_metadata,
     make_bulk_create_objects,
-)
+    SchemaEvolutionMetadata)
 
 if TYPE_CHECKING:
     from fh_immuta_utils.client import ImmutaClient
@@ -88,7 +88,7 @@ def main(config_file: str, glob_prefix: str, debug: bool, dry_run: bool) -> bool
             if not schemas:
                 continue
             for schema_object in schemas:
-                for (data_source, handler) in enroll_iter(  # type: ignore
+                for (data_source, handler, schema_evo) in enroll_iter(  # type: ignore
                     client=client,
                     schema_table_mapping=schema_table_mapping,
                     schema_obj=schema_object,
@@ -105,7 +105,7 @@ def main(config_file: str, glob_prefix: str, debug: bool, dry_run: bool) -> bool
                         )
                     if not dry_run:
                         if not create_data_source(
-                            client=client, data_source=data_source, handler=handler
+                            client=client, data_source=data_source, handler=handler, schema_evo=schema_evo
                         ):
                             failed_tables.add(data_source.name)
         if failed_tables:
@@ -152,10 +152,10 @@ def data_sources_enroll_iterator(
                 config=config, data_source_type=config["handler_type"], handler=handler
             )
 
-            data_source, handler = to_immuta_objects(
+            data_source, handler, schema_evo = to_immuta_objects(
                 schema=schema, table=table["tableName"], columns=columns, config=config
             )
-            yield (data_source, handler)
+            yield (data_source, handler, schema_evo)
 
 
 def data_sources_bulk_enroll_iterator(
@@ -174,22 +174,23 @@ def data_sources_bulk_enroll_iterator(
         if len(tables) == 0:
             LOGGER.warning("No tables found for schema: %s", schema)
             continue
-        data_source, handlers = make_bulk_create_objects(
+        data_source, handlers, schema_evo = make_bulk_create_objects(
             schema=schema,
             tables=[table["tableName"] for table in tables],
             config=config,
             user_prefix=config.get("prefix"),
         )
-        yield (data_source, handlers)
+        yield (data_source, handlers, schema_evo)
 
 
 def create_data_source(
     client: "ImmutaClient",
     data_source: DataSource,
     handler: Union[Handler, List[Handler]],
+    schema_evo: SchemaEvolutionMetadata,
 ) -> bool:
     try:
-        result = client.create_data_source(data_source, handler)
+        result = client.create_data_source(data_source, handler, schema_evo)
         if result:
             LOGGER.info(
                 "Created data source %s, id: %d", data_source.name, result["id"]

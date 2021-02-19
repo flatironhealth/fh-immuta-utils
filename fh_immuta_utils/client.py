@@ -24,7 +24,7 @@ from .data_source import (
     DataSourceDictionary,
     Handler,
     blob_handler_type,
-)
+    SchemaEvolutionMetadata)
 from .policy import GlobalPolicy, make_policy_object_from_json
 from .log import LoggingMixin
 
@@ -257,6 +257,7 @@ class ImmutaClient(LoggingMixin):
         self,
         data_source: DataSource,
         handler: Union[Handler, Sequence[Handler]],
+        schema_evo: SchemaEvolutionMetadata,
         policy_handler=None,
         handler_base_url=None,
         dictionary=None,
@@ -275,6 +276,7 @@ class ImmutaClient(LoggingMixin):
         post_body = {
             "handler": handlers,
             "dataSource": data_source.dict(by_alias=True, skip_defaults=True),
+            "schemaEvolution": schema_evo.dict(by_alias=True, skip_defaults=True),
         }
         if policy_handler:
             post_body["policyRules"] = policy_handler["jsonPolicies"]
