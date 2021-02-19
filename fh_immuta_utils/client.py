@@ -238,7 +238,7 @@ class ImmutaClient(LoggingMixin):
         self, id: int, dictionary: DataSourceDictionary
     ) -> bool:
         res = self._session.put(
-            f"dictionary/{id}", data=dictionary.json(skip_defaults=True)
+            f"dictionary/{id}", data=dictionary.json(exclude_unset=True)
         )
         res.raise_for_status()
         return True
@@ -265,9 +265,9 @@ class ImmutaClient(LoggingMixin):
         request_prefix = blob_handler_type(data_source.blobHandlerType)
         is_bulk_insert = isinstance(handler, list)
         if is_bulk_insert:
-            handlers = [h.dict(by_alias=True, skip_defaults=True) for h in handler]
+            handlers = [h.dict(by_alias=True, exclude_unset=True) for h in handler]
         elif isinstance(handler, Handler):  # type check here to make mypy happy
-            handlers = handler.dict(by_alias=True, skip_defaults=True)
+            handlers = handler.dict(by_alias=True, exclude_unset=True)
         else:
             raise RuntimeError(
                 "Invalid format for given blob handler. Expected either a list or a"
@@ -275,8 +275,8 @@ class ImmutaClient(LoggingMixin):
             )
         post_body = {
             "handler": handlers,
-            "dataSource": data_source.dict(by_alias=True, skip_defaults=True),
-            "schemaEvolution": schema_evo.dict(by_alias=True, skip_defaults=True),
+            "dataSource": data_source.dict(by_alias=True, exclude_unset=True),
+            "schemaEvolution": schema_evo.dict(by_alias=True, exclude_unset=True),
         }
         if policy_handler:
             post_body["policyRules"] = policy_handler["jsonPolicies"]

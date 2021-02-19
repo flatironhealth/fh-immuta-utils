@@ -111,13 +111,13 @@ class Tagger(object):
     ) -> Dict[str, Any]:
         if not children:
             return {
-                "tags": [Tag(name=root_tag).dict(by_alias=True, skip_defaults=True)]
+                "tags": [Tag(name=root_tag).dict(by_alias=True, exclude_unset=True)]
             }
 
         return {
             "rootTag": {"name": root_tag, "deleteHierarchy": False},
             "tags": [
-                Tag(name=child).dict(by_alias=True, skip_defaults=True)
+                Tag(name=child).dict(by_alias=True, exclude_unset=True)
                 for child in children
             ],
         }
