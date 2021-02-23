@@ -257,7 +257,7 @@ class ImmutaClient(LoggingMixin):
         self,
         data_source: DataSource,
         handler: Union[Handler, Sequence[Handler]],
-        schema_evo: SchemaEvolutionMetadata,
+        schema_evolution: SchemaEvolutionMetadata,
         policy_handler=None,
         handler_base_url=None,
         dictionary=None,
@@ -276,7 +276,7 @@ class ImmutaClient(LoggingMixin):
         post_body = {
             "handler": handlers,
             "dataSource": data_source.dict(by_alias=True, exclude_unset=True),
-            "schemaEvolution": schema_evo.dict(by_alias=True, exclude_unset=True),
+            "schemaEvolution": schema_evolution.dict(by_alias=True, exclude_unset=True),
         }
         if policy_handler:
             post_body["policyRules"] = policy_handler["jsonPolicies"]
@@ -520,6 +520,14 @@ class ImmutaClient(LoggingMixin):
         res = self._session.post(f"tag/datasource/{id}", json=tag_data)
         res.raise_for_status()
         return True
+
+    def get_database_test_response(self, dataset_spec: Dict[str, Any]) -> requests.Response:
+        request_prefix = blob_handler_type(dataset_spec["handler_type"])
+        remote_database = dataset_spec["database"]
+        headers = self.make_generic_odbc_request_headers(dataset_spec)
+        res = self.get(f"{request_prefix}/database/{remote_database}/test", headers=headers)
+
+        return res
 
 
 def get_client(base_url: str, auth_config: Dict[str, Any], **kwargs) -> ImmutaClient:

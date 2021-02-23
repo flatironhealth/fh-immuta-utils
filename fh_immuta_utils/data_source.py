@@ -128,12 +128,14 @@ class DataSource(BaseModel):
     useDatesAsDirectory: bool = False
 
 
+class SchemaEvolutionMetadataConfigNameTemplate(BaseModel):
+    nameFormat: str
+    tableFormat: str
+    sqlSchemaNameFormat: str
+
+
 class SchemaEvolutionMetadataConfig(BaseModel):
-    nameTemplate: Dict[str, str] = {
-        "nameFormat": str,
-        "tableFormat": str,
-        "sqlSchemaNameFormat": str
-    }
+    nameTemplate: SchemaEvolutionMetadataConfigNameTemplate
 
 
 class SchemaEvolutionMetadata(BaseModel):
@@ -236,10 +238,10 @@ def make_bulk_create_objects(
     ds = DataSource(
         blobHandlerType=config["handler_type"], recordFormat="json", type="queryable"
     )
-    schema_evo = SchemaEvolutionMetadata(
+    schema_evolution = SchemaEvolutionMetadata(
         disabled=config["disable_schema_evolution"], ownerProfileId=0  # TODO: fix
     )
-    return ds, handlers, schema_evo
+    return ds, handlers, schema_evolution
 
 
 def to_immuta_objects(
@@ -281,10 +283,10 @@ def to_immuta_objects(
         description="bar",
         # owner="foo",
     )
-    schema_evo = SchemaEvolutionMetadata(
+    schema_evolution = SchemaEvolutionMetadata(
         disabled=config["disable_schema_evolution"], ownerProfileId=0  # TODO: fix
     )
-    return ds, handler, schema_evo
+    return ds, handler, schema_evolution
 
 
 def make_handler_metadata(
