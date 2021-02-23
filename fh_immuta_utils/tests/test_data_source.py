@@ -267,10 +267,10 @@ def test_to_immuta_objects(
     expected_type: Any,
     columns: List[ds.DataSourceColumn],
 ):
-    base_config = {"username": "foo", "password": "bar", "database": "baz"}
+    base_config = {"username": "foo", "password": "bar", "database": "baz", "disable_schema_evolution": "false"}
     config = {**base_config, **db_keys}
     config["handler_type"] = handler_type
-    source, handler = ds.to_immuta_objects(
+    source, handler, schema_evolution = ds.to_immuta_objects(
         table="foo", schema="bar", config=config, columns=columns
     )
     assert source.name == ds.make_immuta_table_name(
@@ -324,11 +324,11 @@ BULK_OBJECT_TESTS = [
 def test_make_bulk_create_objects(
     db_keys: Dict[str, str], handler_type: str, expected_type: Any, tables: List[str]
 ):
-    base_config = {"username": "foo", "password": "bar", "database": "baz"}
+    base_config = {"username": "foo", "password": "bar", "database": "baz", "disable_schema_evolution": "false"}
     config = {**base_config, **db_keys}
     config["handler_type"] = handler_type
 
-    source, handlers = ds.make_bulk_create_objects(
+    source, handlers, schema_evolution = ds.make_bulk_create_objects(
         tables=tables, schema="bar", config=config
     )
     assert len(handlers) == len(tables)

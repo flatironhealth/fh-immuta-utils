@@ -214,4 +214,4 @@ def test_make_subscription_policy_action(subscription_policy_actions_dict, tagge
 
 
 def test_subscription_policy_staged(subscription_policy_staged_bool):
-    assert subscription_policy_staged_bool == False
+    assert subscription_policy_staged_bool is False
