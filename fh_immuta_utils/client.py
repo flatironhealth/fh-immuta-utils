@@ -521,13 +521,16 @@ class ImmutaClient(LoggingMixin):
         res.raise_for_status()
         return True
 
-    def get_database_test_response(self, dataset_spec: Dict[str, Any]) -> requests.Response:
+    def get_remote_database_test_response(self, dataset_spec: Dict[str, Any]) -> requests.Response:
         request_prefix = blob_handler_type(dataset_spec["handler_type"])
         remote_database = dataset_spec["database"]
         headers = self.make_generic_odbc_request_headers(dataset_spec)
-        res = self.get(f"{request_prefix}/database/{remote_database}/test", headers=headers)
-
+        path = f"{request_prefix}/database/{remote_database}/test"
+        res = self._session.get(path, headers=headers)
         return res
+
+    def get_current_user_information(self) -> requests.Response:
+        return self.get("/bim/rpc/user/current")
 
 
 def get_client(base_url: str, auth_config: Dict[str, Any], **kwargs) -> ImmutaClient:

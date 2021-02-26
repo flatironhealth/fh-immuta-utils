@@ -76,6 +76,7 @@ def main(config_file: str, glob_prefix: str, debug: bool, dry_run: bool) -> bool
         credentials = retrieve_credentials(dataset_spec["credentials"])
         dataset_spec["username"] = credentials["username"]
         dataset_spec["password"] = credentials["password"]
+        dataset_spec["owner_profile_id"] = client.get_current_user_information()["profile"]["id"]
 
         if skip_dataset_enrollment(client, dataset_spec):
             continue
@@ -206,17 +207,16 @@ def create_data_source(
 
 
 def is_schema_evolution_enabled(client: "ImmutaClient", dataset_spec: Dict[str, Any]) -> bool:
-    res = client.get_database_test_response(dataset_spec)
-
-    if res.status_code == 200 and "" in res:
+    res = client.get_remote_database_test_response(dataset_spec)
+    if res.status_code == 200 and "existingSchemaEvolutionRecord" in res.json():
         return True
 
     return False
 
 
 def skip_dataset_enrollment(client: "ImmutaClient", dataset_spec: Dict[str, Any]) -> bool:
-    # skip enrollment if remote database is already enrolled, schema monitoring is enabled, and config does not disable
-    # schema monitoring
+    # skip enrollment if remote database is already enrolled, schema evolution is enabled, and config does not disable
+    # schema evolution
     disable_schema_evolution = dataset_spec.get("disable_schema_evolution", True)
     schema_evolution_status = is_schema_evolution_enabled(client, dataset_spec)
     if schema_evolution_status and not disable_schema_evolution:

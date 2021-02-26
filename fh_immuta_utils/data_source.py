@@ -139,8 +139,8 @@ class SchemaEvolutionMetadataConfig(BaseModel):
 
 
 class SchemaEvolutionMetadata(BaseModel):
-    disabled: bool = True
     ownerProfileId: int
+    disabled: bool = True
     config: Optional[SchemaEvolutionMetadataConfig] = None
 
 
@@ -239,7 +239,7 @@ def make_bulk_create_objects(
         blobHandlerType=config["handler_type"], recordFormat="json", type="queryable"
     )
     schema_evolution = SchemaEvolutionMetadata(
-        disabled=config["disable_schema_evolution"], ownerProfileId=0  # TODO: fix
+        ownerProfileId=config["owner_profile_id"], disabled=config["disable_schema_evolution"],  # TODO: fix
     )
     return ds, handlers, schema_evolution
 
@@ -284,7 +284,7 @@ def to_immuta_objects(
         # owner="foo",
     )
     schema_evolution = SchemaEvolutionMetadata(
-        disabled=config["disable_schema_evolution"], ownerProfileId=0  # TODO: fix
+        ownerProfileId=config["owner_profile_id"], disabled=config["disable_schema_evolution"],  # TODO: fix
     )
     return ds, handler, schema_evolution
 
