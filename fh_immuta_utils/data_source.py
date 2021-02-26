@@ -38,8 +38,6 @@ PREFIX_MAP = {
     "Amazon S3": "s3",
     "Amazon Athena": "ath",
 }
-MAX_IMMUTA_NAME_LIMIT = 55
-MAX_POSTGRES_NAME_LIMIT = 63
 
 
 def blob_handler_type(handler_type: str) -> str:
@@ -50,7 +48,7 @@ def make_immuta_table_name(
     handler_type: str, schema: str, table: str, user_prefix: Optional[str]
 ) -> str:
     """
-    Returns a table name that's guaranteed to be unique and within the max char limit (55)
+    Returns a table name that's guaranteed to be unique
     """
     table_name = ""
     if user_prefix:
@@ -58,35 +56,20 @@ def make_immuta_table_name(
     table_name += f"{PREFIX_MAP[handler_type]}_{schema}_{table}"
     if table_name is None:
         return None
-    if len(table_name) <= MAX_IMMUTA_NAME_LIMIT:
-        return table_name
-    import hashlib
-
-    return (
-        table_name[: MAX_IMMUTA_NAME_LIMIT - 8]
-        + hashlib.md5(table_name.encode()).hexdigest()[:8]
-    )
+    return table_name
 
 
 def make_postgres_table_name(
     handler_type: str, schema: str, table: str, user_prefix: Optional[str]
 ) -> str:
     """
-    Returns table name that has a shortened prefix and conforms to the Postgres max char limit (63)
+    Returns table name that has a shortened prefix
     """
     table_name = ""
     if user_prefix:
         table_name = f"{user_prefix}_"
     table_name += f"{PREFIX_MAP[handler_type]}_{schema}_{table}"
-    if len(table_name) < MAX_POSTGRES_NAME_LIMIT:
-        return table_name
-    trunc_table_name = table_name[:MAX_POSTGRES_NAME_LIMIT]
-    LOGGER.warning(
-        "Postgres table name too long! Table %s truncated to %s",
-        table_name,
-        trunc_table_name,
-    )
-    return trunc_table_name
+    return table_name
 
 
 class BlobHandler(BaseModel):
