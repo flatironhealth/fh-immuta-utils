@@ -111,14 +111,12 @@ class DataSource(BaseModel):
     useDatesAsDirectory: bool = False
 
 
-class SchemaEvolutionMetadataConfigNameTemplate(BaseModel):
-    nameFormat: str
-    tableFormat: str
-    sqlSchemaNameFormat: str
-
-
 class SchemaEvolutionMetadataConfig(BaseModel):
-    nameTemplate: SchemaEvolutionMetadataConfigNameTemplate
+    nameTemplate: Dict[str, str] = {
+        "nameFormat": str,
+        "tableFormat": str,
+        "sqlSchemaNameFormat": str
+    }
 
 
 class SchemaEvolutionMetadata(BaseModel):
@@ -221,9 +219,8 @@ def make_bulk_create_objects(
     ds = DataSource(
         blobHandlerType=config["handler_type"], recordFormat="json", type="queryable"
     )
-    schema_evolution = SchemaEvolutionMetadata(
-        ownerProfileId=config["owner_profile_id"], disabled=config["disable_schema_evolution"],  # TODO: fix
-    )
+    schema_evolution = make_schema_evolution_metadata(config)
+
     return ds, handlers, schema_evolution
 
 
@@ -266,9 +263,8 @@ def to_immuta_objects(
         description="bar",
         # owner="foo",
     )
-    schema_evolution = SchemaEvolutionMetadata(
-        ownerProfileId=config["owner_profile_id"], disabled=config["disable_schema_evolution"],  # TODO: fix
-    )
+    schema_evolution = make_schema_evolution_metadata(config)
+
     return ds, handler, schema_evolution
 
 
@@ -303,3 +299,17 @@ def make_handler_metadata(
         )
     handler = Handler(metadata=metadata)
     return handler
+
+
+def make_schema_evolution_metadata(config: Dict[str, Any]) -> SchemaEvolutionMetadata:
+    return SchemaEvolutionMetadata(
+        ownerProfileId=config["owner_profile_id"],
+        disabled=config.get("schema_evolution", True).get("disable_schema_evolution", True),
+        config=SchemaEvolutionMetadataConfig(
+            nameTemplate={
+                "nameFormat": config.get("schema_evolution", "<Tablename>").get("immuta_name_format", "<Tablename>"),
+                "tableFormat": config.get("schema_evolution", "<tablename>").get("sql_table_name_format", "<tablename>"),
+                "sqlSchemaNameFormat": config.get("schema_evolution", "<schema>").get("sql_schema_name_format", "<schema>"),
+            }
+        )
+    )

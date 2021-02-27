@@ -529,7 +529,7 @@ class ImmutaClient(LoggingMixin):
         res = self._session.get(path, headers=headers)
         return res
 
-    def get_current_user_information(self) -> requests.Response:
+    def get_current_user_information(self) -> Dict[str, Any]:
         return self.get("/bim/rpc/user/current")
 
 

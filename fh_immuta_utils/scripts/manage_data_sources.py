@@ -160,7 +160,7 @@ def data_sources_enroll_iterator(
             data_source, handler, schema_evolution = to_immuta_objects(
                 schema=schema, table=table["tableName"], columns=columns, config=config
             )
-            yield (data_source, handler, schema_evolution)
+            yield data_source, handler, schema_evolution
 
 
 def data_sources_bulk_enroll_iterator(
@@ -185,7 +185,7 @@ def data_sources_bulk_enroll_iterator(
             config=config,
             user_prefix=config.get("prefix"),
         )
-        yield (data_source, handlers, schema_evolution)
+        yield data_source, handlers, schema_evolution
 
 
 def create_data_source(
@@ -217,7 +217,7 @@ def is_schema_evolution_enabled(client: "ImmutaClient", dataset_spec: Dict[str, 
 def skip_dataset_enrollment(client: "ImmutaClient", dataset_spec: Dict[str, Any]) -> bool:
     # skip enrollment if remote database is already enrolled, schema evolution is enabled, and config does not disable
     # schema evolution
-    disable_schema_evolution = dataset_spec.get("disable_schema_evolution", True)
+    disable_schema_evolution = dataset_spec.get("schema_evolution", True).get("disable_schema_evolution", True)
     schema_evolution_status = is_schema_evolution_enabled(client, dataset_spec)
     if schema_evolution_status and not disable_schema_evolution:
         LOGGER.info(
