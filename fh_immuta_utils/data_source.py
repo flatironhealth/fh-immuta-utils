@@ -44,26 +44,11 @@ def blob_handler_type(handler_type: str) -> str:
     return HANDLER_TYPES.get(handler_type, handler_type)
 
 
-def make_immuta_table_name(
+def make_table_name(
     handler_type: str, schema: str, table: str, user_prefix: Optional[str]
 ) -> str:
     """
-    Returns a table name that's guaranteed to be unique
-    """
-    table_name = ""
-    if user_prefix:
-        table_name = f"{user_prefix}_"
-    table_name += f"{PREFIX_MAP[handler_type]}_{schema}_{table}"
-    if table_name is None:
-        return None
-    return table_name
-
-
-def make_postgres_table_name(
-    handler_type: str, schema: str, table: str, user_prefix: Optional[str]
-) -> str:
-    """
-    Returns table name that has a shortened prefix
+    Returns table name with format <handler_prefix>_<schema>_<table>. <user_prefix>_ is prepended if provided.
     """
     table_name = ""
     if user_prefix:
@@ -200,19 +185,18 @@ def make_bulk_create_objects(
     """
     handlers = []
     for table in tables:
-        external_table_name = make_postgres_table_name(
-            config["handler_type"], schema, table, user_prefix
+        table_name = make_table_name(
+            handler_type=config["handler_type"],
+            schema=schema,
+            table=table,
+            user_prefix=user_prefix,
         )
-        immuta_table_name = make_immuta_table_name(
-            config["handler_type"], schema, table, user_prefix
-        )
-
         handler = make_handler_metadata(
             table=table,
             schema=schema,
             config=config,
-            bodataTableName=external_table_name,
-            dataSourceName=immuta_table_name,
+            bodataTableName=table_name,
+            dataSourceName=table_name,
         )
         handlers.append(handler)
 
@@ -235,26 +219,23 @@ def to_immuta_objects(
     Returns a tuple containing relevant details to create a new data source
     in Immuta from the source schema
     """
-    external_table_name = make_postgres_table_name(
+    table_name = make_table_name(
         handler_type=config["handler_type"],
         schema=schema,
         table=table,
         user_prefix=user_prefix,
-    )
-    immuta_table_name = make_immuta_table_name(
-        config["handler_type"], schema, table, user_prefix
     )
     handler = make_handler_metadata(
         table=table,
         schema=schema,
         config=config,
         columns=columns,
-        bodataTableName=external_table_name,
-        dataSourceName=immuta_table_name,
+        bodataTableName=table_name,
+        dataSourceName=table_name,
     )
     ds = DataSource(
-        name=immuta_table_name,
-        sqlTableName=external_table_name,
+        name=table_name,
+        sqlTableName=table_name,
         blobHandlerType=config["handler_type"],
         blobHandler=BlobHandler(scheme="https"),
         recordFormat="json",
@@ -302,14 +283,17 @@ def make_handler_metadata(
 
 
 def make_schema_evolution_metadata(config: Dict[str, Any]) -> SchemaEvolutionMetadata:
+    name_default = f"{PREFIX_MAP[config['handler_type']]}_<schema>_<tablename>"
+    table_default = f"{PREFIX_MAP[config['handler_type']]}_<schema>_<tablename>"
+    schema_default = "<schema>"
     return SchemaEvolutionMetadata(
         ownerProfileId=config["owner_profile_id"],
         disabled=config.get("schema_evolution", True).get("disable_schema_evolution", True),
         config=SchemaEvolutionMetadataConfig(
             nameTemplate={
-                "nameFormat": config.get("schema_evolution", "<Tablename>").get("immuta_name_format", "<Tablename>"),
-                "tableFormat": config.get("schema_evolution", "<tablename>").get("sql_table_name_format", "<tablename>"),
-                "sqlSchemaNameFormat": config.get("schema_evolution", "<schema>").get("sql_schema_name_format", "<schema>"),
+                "nameFormat": config.get("schema_evolution", name_default).get("immuta_name_format", name_default),
+                "tableFormat": config.get("schema_evolution", table_default).get("sql_table_name_format", table_default),
+                "sqlSchemaNameFormat": config.get("schema_evolution", schema_default).get("sql_schema_name_format", schema_default),
             }
         )
     )
