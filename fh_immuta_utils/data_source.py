@@ -288,12 +288,12 @@ def make_schema_evolution_metadata(config: Dict[str, Any]) -> SchemaEvolutionMet
     schema_format_default = "<schema>"
     return SchemaEvolutionMetadata(
         ownerProfileId=config["owner_profile_id"],
-        disabled=config.get("schema_evolution", True).get("disable_schema_evolution", True),
+        disabled=config.get("schema_evolution", {}).get("disable_schema_evolution", True),
         config=SchemaEvolutionMetadataConfig(
             nameTemplate={
-                "nameFormat": config.get("schema_evolution", name_format_default).get("immuta_name_format", name_format_default),
-                "tableFormat": config.get("schema_evolution", table_format_default).get("sql_table_name_format", table_format_default),
-                "sqlSchemaNameFormat": config.get("schema_evolution", schema_format_default).get("sql_schema_name_format", schema_format_default),
+                "nameFormat": config.get("schema_evolution", {}).get("immuta_name_format", name_format_default),
+                "tableFormat": config.get("schema_evolution", {}).get("sql_table_name_format", table_format_default),
+                "sqlSchemaNameFormat": config.get("schema_evolution", {}).get("sql_schema_name_format", schema_format_default),
             }
         )
     )
