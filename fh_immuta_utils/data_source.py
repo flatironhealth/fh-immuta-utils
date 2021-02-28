@@ -48,7 +48,7 @@ def make_table_name(
     handler_type: str, schema: str, table: str, user_prefix: Optional[str]
 ) -> str:
     """
-    Returns table name with format <handler_prefix>_<schema>_<table>. <user_prefix>_ is prepended if provided.
+    Returns table name with format <handler_prefix>_<schema>_<table>. If provided, <user_prefix>_ is prepended.
     """
     table_name = ""
     if user_prefix:
@@ -283,17 +283,17 @@ def make_handler_metadata(
 
 
 def make_schema_evolution_metadata(config: Dict[str, Any]) -> SchemaEvolutionMetadata:
-    name_default = f"{PREFIX_MAP[config['handler_type']]}_<schema>_<tablename>"
-    table_default = f"{PREFIX_MAP[config['handler_type']]}_<schema>_<tablename>"
-    schema_default = "<schema>"
+    name_format_default = f"{PREFIX_MAP[config['handler_type']]}_<schema>_<tablename>"
+    table_format_default = f"{PREFIX_MAP[config['handler_type']]}_<schema>_<tablename>"
+    schema_format_default = "<schema>"
     return SchemaEvolutionMetadata(
         ownerProfileId=config["owner_profile_id"],
         disabled=config.get("schema_evolution", True).get("disable_schema_evolution", True),
         config=SchemaEvolutionMetadataConfig(
             nameTemplate={
-                "nameFormat": config.get("schema_evolution", name_default).get("immuta_name_format", name_default),
-                "tableFormat": config.get("schema_evolution", table_default).get("sql_table_name_format", table_default),
-                "sqlSchemaNameFormat": config.get("schema_evolution", schema_default).get("sql_schema_name_format", schema_default),
+                "nameFormat": config.get("schema_evolution", name_format_default).get("immuta_name_format", name_format_default),
+                "tableFormat": config.get("schema_evolution", table_format_default).get("sql_table_name_format", table_format_default),
+                "sqlSchemaNameFormat": config.get("schema_evolution", schema_format_default).get("sql_schema_name_format", schema_format_default),
             }
         )
     )

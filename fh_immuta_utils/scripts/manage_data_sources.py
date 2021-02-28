@@ -215,14 +215,20 @@ def is_schema_evolution_enabled(client: "ImmutaClient", dataset_spec: Dict[str, 
 
 
 def skip_dataset_enrollment(client: "ImmutaClient", dataset_spec: Dict[str, Any]) -> bool:
-    # skip enrollment if remote database is already enrolled, schema evolution is enabled, and config does not disable
-    # schema evolution
     disable_schema_evolution = dataset_spec.get("schema_evolution", True).get("disable_schema_evolution", True)
     schema_evolution_status = is_schema_evolution_enabled(client, dataset_spec)
+    # skip enrollment if remote database is already enrolled, schema evolution is enabled, and config does not disable
+    # schema evolution
     if schema_evolution_status and not disable_schema_evolution:
         LOGGER.info(
-            f"{dataset_spec['hostname']}/{dataset_spec['database']} is already enrolled and monitoring for schema changes. Skipping.")  # TODO: Fix
+            f"{dataset_spec['hostname']}/{dataset_spec['database']} is already enrolled and monitoring for schema "
+            f"changes. Skipping enrollment.")
         return True
+
+    if not schema_evolution_status and not disable_schema_evolution:
+        LOGGER.info(f"Enabling schema evolution for {dataset_spec['hostname']}/{dataset_spec['database']}")
+    if schema_evolution_status and disable_schema_evolution:
+        LOGGER.info(f"Disabling schema evolution for {dataset_spec['hostname']}/{dataset_spec['database']}")
 
     return False
 
