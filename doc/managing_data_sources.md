@@ -7,7 +7,7 @@ Assuming that you've created state files for data sources as specified in the [C
 you can invoke a script within the repo to manage all datasets for you in your Immuta instance.
 
 ``` bash
-$ fh-immuta-utils data-sources manage --config-file foo.yml
+$ fh-immuta-utils data-source manage --config-file foo.yml
 ```
 
 For a list of supported args, please run with `--help`.
@@ -15,7 +15,7 @@ For a list of supported args, please run with `--help`.
 # Deletion
 
 ``` bash
-$ fh-immuta-utils data-sources bulk-delete --config-file foo.yml --search-text foo
+$ fh-immuta-utils data-source bulk-delete --config-file foo.yml --search-text foo
 ```
 
 Note that unless triggered with `--hard-delete`, the script will only disable a data source in Immuta and not actually delete it.

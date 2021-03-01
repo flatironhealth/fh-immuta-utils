@@ -32,8 +32,8 @@ An example of a state file for a PostgreSQL database is as follows:
 hostname: my-database.foo.com
 port: 5439
 database: db-name
-# Prefix to add to name of data source created in Immuta
-user_prefix:
+# Prefix to prepend to name of data source created in Immuta
+prefix:
 handler_type: PostgreSQL
 # List of schemas to enroll where for each schema,
 # we only want to enroll tables with a specific name/prefix
@@ -44,6 +44,16 @@ schemas_to_enroll:
 # List of schemas where we want to enroll all tables in each schema
 schemas_to_bulk_enroll:
   - schema_prefix: "baz"
+# Schema evolution enablement and naming templates. Defaults are shown. Any of the macros shown in the UI when creating
+# or editing a data source to enable schema monitoring can be used in the template strings.
+# immuta_name_format = Template for Immuta data source names
+# sql_table_name_format = Template for Query Engine SQL table names
+# sql_schema_name_format = Template for the Query Engine schema to use when enrolling tables
+schema_evolution:
+  disable_schema_evolution: true
+  immuta_name_format: "<user_prefix>_<handler_prefix>_<schema>_<tablename>"
+  sql_table_name_format "<user_prefix>_<handler_prefix>_<schema>_<tablename>"
+  sql_schema_name_format: "<schema>"
 credentials:
   # Read from environment variable
   source: ENV
@@ -81,6 +91,16 @@ schemas_to_enroll:
     table_prefix: bar
 # List of schemas where we want to enroll all tables in each schema
 schemas_to_bulk_enroll:
+# Schema evolution enablement and naming templates. Defaults are shown. Any of the macros shown in the UI when creating
+# or editing a data source to enable schema monitoring can be used in the template strings.
+# immuta_name_format = Template for Immuta data source names
+# sql_table_name_format = Template for Query Engine SQL table names
+# sql_schema_name_format = Template for the Query Engine schema to use when enrolling tables
+schema_evolution:
+  disable_schema_evolution: true
+  immuta_name_format: "<user_prefix>_<handler_prefix>_<schema>_<tablename>"
+  sql_table_name_format "<user_prefix>_<handler_prefix>_<schema>_<tablename>"
+  sql_schema_name_format: "<schema>"
 credentials:
   # Read from an instance of Hashicorp Vault
   source: VAULT
