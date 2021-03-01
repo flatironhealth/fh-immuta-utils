@@ -283,17 +283,28 @@ def make_handler_metadata(
 
 
 def make_schema_evolution_metadata(config: Dict[str, Any]) -> SchemaEvolutionMetadata:
-    name_format_default = f"{PREFIX_MAP[config['handler_type']]}_<schema>_<tablename>"
-    table_format_default = f"{PREFIX_MAP[config['handler_type']]}_<schema>_<tablename>"
-    schema_format_default = "<schema>"
+    """
+    Builds metadata for the schema evolution object. Immuta table name and SQL table name template defaults match the
+    pattern defined in make_table_name()
+    :param config: dataset configuration dictionary
+    :return: SchemaEvolutionMetadata object
+    """
+    user_prefix = ""
+    if config.get("prefix"):
+        user_prefix = f"{config.get('prefix')}_"
+    handler_prefix = PREFIX_MAP[config['handler_type']]
+    immuta_name_format_default = f"{user_prefix}{handler_prefix}_<schema>_<tablename>"
+    sql_table_name_format_default = f"{user_prefix}{handler_prefix}_<schema>_<tablename>"
+    sql_schema_name_format_default = "<schema>"
+
     return SchemaEvolutionMetadata(
         ownerProfileId=config["owner_profile_id"],
         disabled=config.get("schema_evolution", {}).get("disable_schema_evolution", True),
         config=SchemaEvolutionMetadataConfig(
             nameTemplate={
-                "nameFormat": config.get("schema_evolution", {}).get("immuta_name_format", name_format_default),
-                "tableFormat": config.get("schema_evolution", {}).get("sql_table_name_format", table_format_default),
-                "sqlSchemaNameFormat": config.get("schema_evolution", {}).get("sql_schema_name_format", schema_format_default),
+                "nameFormat": config.get("schema_evolution", {}).get("immuta_name_format", immuta_name_format_default),
+                "tableFormat": config.get("schema_evolution", {}).get("sql_table_name_format", sql_table_name_format_default),
+                "sqlSchemaNameFormat": config.get("schema_evolution", {}).get("sql_schema_name_format", sql_schema_name_format_default),
             }
         )
     )
