@@ -207,6 +207,12 @@ def create_data_source(
 
 
 def is_schema_evolution_enabled(client: "ImmutaClient", dataset_spec: Dict[str, Any]) -> bool:
+    """
+    Determines if schema evolution is enabled for the remote database.
+    :param client: authenticated Immuta client
+    :param dataset_spec: dataset configuration dictionary
+    :return: bool
+    """
     res = client.get_remote_database_test_response(dataset_spec)
     res_data = res.json()
     if res.status_code == 200 and "existingSchemaEvolutionRecord" in res_data:
@@ -217,6 +223,12 @@ def is_schema_evolution_enabled(client: "ImmutaClient", dataset_spec: Dict[str, 
 
 
 def skip_dataset_enrollment(client: "ImmutaClient", dataset_spec: Dict[str, Any]) -> bool:
+    """
+    Evaluates scenarios to determine if dataset enrollment should be skipped.
+    :param client: authenticated Immuta client
+    :param dataset_spec: dataset configuration dictionary
+    :return: bool
+    """
     disable_schema_evolution = dataset_spec.get("schema_evolution", {}).get("disable_schema_evolution", True)
     schema_evolution_status = is_schema_evolution_enabled(client, dataset_spec)
     # skip enrollment if remote database is already enrolled, schema evolution is enabled, and config does not disable

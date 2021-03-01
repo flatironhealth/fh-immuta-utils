@@ -522,6 +522,11 @@ class ImmutaClient(LoggingMixin):
         return True
 
     def get_remote_database_test_response(self, dataset_spec: Dict[str, Any]) -> requests.Response:
+        """
+        Tests a remote database enrollment.
+        :param dataset_spec: dataset configuration dictionary
+        :return: test response
+        """
         request_prefix = blob_handler_type(dataset_spec["handler_type"])
         remote_database = dataset_spec["database"]
         headers = self.make_generic_odbc_request_headers(dataset_spec)
