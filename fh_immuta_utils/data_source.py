@@ -96,12 +96,14 @@ class DataSource(BaseModel):
     useDatesAsDirectory: bool = False
 
 
+class SchemaEvolutionMetadataConfigTemplate(BaseModel):
+    nameFormat: str
+    tableFormat: str
+    sqlSchemaNameFormat: str
+
+
 class SchemaEvolutionMetadataConfig(BaseModel):
-    nameTemplate: Dict[str, str] = {
-        "nameFormat": str,
-        "tableFormat": str,
-        "sqlSchemaNameFormat": str
-    }
+    nameTemplate: SchemaEvolutionMetadataConfigTemplate
 
 
 class SchemaEvolutionMetadata(BaseModel):
@@ -178,7 +180,7 @@ def make_bulk_create_objects(
     schema: str,
     tables: List[str],
     user_prefix: Optional[str] = None,
-) -> Tuple[DataSource, List[Handler]]:
+) -> Tuple[DataSource, List[Handler], SchemaEvolutionMetadata]:
     """
     Returns a (data source, metadata) tuple containing relevant details to bulk create new data
     sources in Immuta from the source schema
@@ -214,7 +216,7 @@ def to_immuta_objects(
     table: str,
     columns: List[DataSourceColumn],
     user_prefix: Optional[str] = None,
-) -> Tuple[DataSource, Handler]:
+) -> Tuple[DataSource, Handler, SchemaEvolutionMetadata]:
     """
     Returns a tuple containing relevant details to create a new data source
     in Immuta from the source schema
@@ -292,19 +294,29 @@ def make_schema_evolution_metadata(config: Dict[str, Any]) -> SchemaEvolutionMet
     user_prefix = ""
     if config.get("prefix"):
         user_prefix = f"{config.get('prefix')}_"
-    handler_prefix = PREFIX_MAP[config['handler_type']]
+    handler_prefix = PREFIX_MAP[config["handler_type"]]
     immuta_name_format_default = f"{user_prefix}{handler_prefix}_<schema>_<tablename>"
-    sql_table_name_format_default = f"{user_prefix}{handler_prefix}_<schema>_<tablename>"
+    sql_table_name_format_default = (
+        f"{user_prefix}{handler_prefix}_<schema>_<tablename>"
+    )
     sql_schema_name_format_default = "<schema>"
 
     return SchemaEvolutionMetadata(
         ownerProfileId=config["owner_profile_id"],
-        disabled=config.get("schema_evolution", {}).get("disable_schema_evolution", True),
+        disabled=config.get("schema_evolution", {}).get(
+            "disable_schema_evolution", True
+        ),
         config=SchemaEvolutionMetadataConfig(
-            nameTemplate={
-                "nameFormat": config.get("schema_evolution", {}).get("immuta_name_format", immuta_name_format_default),
-                "tableFormat": config.get("schema_evolution", {}).get("sql_table_name_format", sql_table_name_format_default),
-                "sqlSchemaNameFormat": config.get("schema_evolution", {}).get("sql_schema_name_format", sql_schema_name_format_default),
-            }
-        )
+            nameTemplate=SchemaEvolutionMetadataConfigTemplate(
+                nameFormat=config.get("schema_evolution", {}).get(
+                    "immuta_name_format", immuta_name_format_default
+                ),
+                tableFormat=config.get("schema_evolution", {}).get(
+                    "sql_table_name_format", sql_table_name_format_default
+                ),
+                sqlSchemaNameFormat=config.get("schema_evolution", {}).get(
+                    "sql_schema_name_format", sql_schema_name_format_default
+                ),
+            )
+        ),
     )

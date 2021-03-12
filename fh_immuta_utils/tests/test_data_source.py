@@ -60,9 +60,7 @@ def test_make_table_name(
     name = ds.make_table_name(
         handler_type=handler_type, schema=schema, table=table, user_prefix=user_prefix
     )
-    assert (
-        name == expected_name
-    )
+    assert name == expected_name
 
 
 MetadataTestKeys = namedtuple(
@@ -180,7 +178,12 @@ def test_to_immuta_objects(
     expected_type: Any,
     columns: List[ds.DataSourceColumn],
 ):
-    base_config = {"username": "foo", "password": "bar", "database": "baz", "owner_profile_id": 0}
+    base_config = {
+        "username": "foo",
+        "password": "bar",
+        "database": "baz",
+        "owner_profile_id": 0,
+    }
     config = {**base_config, **db_keys}
     config["handler_type"] = handler_type
     source, handler, schema_evolution = ds.to_immuta_objects(
@@ -238,7 +241,12 @@ BULK_OBJECT_TESTS = [
 def test_make_bulk_create_objects(
     db_keys: Dict[str, str], handler_type: str, expected_type: Any, tables: List[str]
 ):
-    base_config = {"username": "foo", "password": "bar", "database": "baz", "owner_profile_id": 0}
+    base_config = {
+        "username": "foo",
+        "password": "bar",
+        "database": "baz",
+        "owner_profile_id": 0,
+    }
     config = {**base_config, **db_keys}
     config["handler_type"] = handler_type
 
@@ -264,6 +272,7 @@ def test_make_bulk_create_objects(
 
     assert isinstance(schema_evolution, ds.SchemaEvolutionMetadata)
 
+
 SCHEMA_EVOLUTION_METADATA_TESTS = {
     "schema_evolution_no_config": (
         {
@@ -279,8 +288,8 @@ SCHEMA_EVOLUTION_METADATA_TESTS = {
                     "tableFormat": "rs_<schema>_<tablename>",
                     "sqlSchemaNameFormat": "<schema>",
                 }
-            )
-        )
+            ),
+        ),
     ),
     "schema_evolution_no_config_change_handler": (
         {
@@ -296,8 +305,8 @@ SCHEMA_EVOLUTION_METADATA_TESTS = {
                     "tableFormat": "ath_<schema>_<tablename>",
                     "sqlSchemaNameFormat": "<schema>",
                 }
-            )
-        )
+            ),
+        ),
     ),
     "schema_evolution_disabled": (
         {
@@ -308,7 +317,7 @@ SCHEMA_EVOLUTION_METADATA_TESTS = {
                 "immuta_name_format": "foo",
                 "sql_table_name_format": "bar",
                 "sql_schema_name_format": "biz",
-            }
+            },
         },
         ds.SchemaEvolutionMetadata(
             ownerProfileId=0,
@@ -319,8 +328,8 @@ SCHEMA_EVOLUTION_METADATA_TESTS = {
                     "tableFormat": "bar",
                     "sqlSchemaNameFormat": "biz",
                 }
-            )
-        )
+            ),
+        ),
     ),
     "schema_evolution_enabled": (
         {
@@ -331,7 +340,7 @@ SCHEMA_EVOLUTION_METADATA_TESTS = {
                 "immuta_name_format": "foo",
                 "sql_table_name_format": "bar",
                 "sql_schema_name_format": "biz",
-            }
+            },
         },
         ds.SchemaEvolutionMetadata(
             ownerProfileId=0,
@@ -342,15 +351,23 @@ SCHEMA_EVOLUTION_METADATA_TESTS = {
                     "tableFormat": "bar",
                     "sqlSchemaNameFormat": "biz",
                 }
-            )
-        )
+            ),
+        ),
     ),
 }
 
 
-@pytest.mark.parametrize("config, expected", list(SCHEMA_EVOLUTION_METADATA_TESTS.values()), ids=list(SCHEMA_EVOLUTION_METADATA_TESTS.keys()))
-def test_make_schema_evolution_metadata(config: Dict[str, Any], expected: ds.SchemaEvolutionMetadata):
-    assert isinstance(ds.make_schema_evolution_metadata(config), ds.SchemaEvolutionMetadata)
+@pytest.mark.parametrize(
+    "config, expected",
+    list(SCHEMA_EVOLUTION_METADATA_TESTS.values()),
+    ids=list(SCHEMA_EVOLUTION_METADATA_TESTS.keys()),
+)
+def test_make_schema_evolution_metadata(
+    config: Dict[str, Any], expected: ds.SchemaEvolutionMetadata
+):
+    assert isinstance(
+        ds.make_schema_evolution_metadata(config), ds.SchemaEvolutionMetadata
+    )
     assert ds.make_schema_evolution_metadata(config) == expected
 
 
@@ -360,44 +377,50 @@ SKIP_DATASET_ENROLLMENT_TESTS = {
             "is_schema_evolution_enabled": True,
             "schema_evolution": {
                 "disable_schema_evolution": False,
-            }
+            },
         },
-        True
+        True,
     ),
     "schema_evolution_enabled_config_disabled": (
         {
             "is_schema_evolution_enabled": True,
             "schema_evolution": {
                 "disable_schema_evolution": True,
-            }
+            },
         },
-        False
+        False,
     ),
     "schema_evolution_disabled_config_disabled": (
         {
             "is_schema_evolution_enabled": False,
             "schema_evolution": {
                 "disable_schema_evolution": True,
-            }
+            },
         },
-        False
+        False,
     ),
     "schema_evolution_disabled_config_enabled": (
         {
             "is_schema_evolution_enabled": False,
             "schema_evolution": {
                 "disable_schema_evolution": False,
-            }
+            },
         },
-        False
-    )
+        False,
+    ),
 }
 
 
-@pytest.mark.parametrize("config, expected", list(SKIP_DATASET_ENROLLMENT_TESTS.values()), ids=list(SKIP_DATASET_ENROLLMENT_TESTS.keys()))
+@pytest.mark.parametrize(
+    "config, expected",
+    list(SKIP_DATASET_ENROLLMENT_TESTS.values()),
+    ids=list(SKIP_DATASET_ENROLLMENT_TESTS.keys()),
+)
 @patch("fh_immuta_utils.scripts.manage_data_sources.is_schema_evolution_enabled")
 def test_skip_dataset_enrollment(mock_is_schema_evolution_enabled, config, expected):
     config["hostname"] = "redshift.foobar.io"
     config["database"] = "data"
-    mock_is_schema_evolution_enabled.return_value = config["is_schema_evolution_enabled"]
+    mock_is_schema_evolution_enabled.return_value = config[
+        "is_schema_evolution_enabled"
+    ]
     assert skip_dataset_enrollment(None, config) == expected

@@ -1,7 +1,6 @@
-Configuration
-=============
+# Configuration
 
-# Base Config File
+## Base Config File
 The scripts inside fh-immuta-utils expect a config file specifying how to connect to your Immuta instance as well as the details around whatever state you're trying to manage.
 
 An example config file is as follows:
@@ -19,12 +18,39 @@ The `config_root` key specifies the directory containing all the state configura
 
 The supported auth schemes can be found in `config.py`.
 
-# Data Source State
+## Data Source State
 
 All specs for enrolled data sources should be placed inside a directory named `enrolled_datasets` within the `config_root`.
 fh-immuta-utils globs for all YAML files within that directory and then processes each.
 
-## PostgreSQL
+### Schema Evolution
+
+Schema evolution (aka schema monitoring) can be enabled or disabled across all query-backed data sources for a remote
+database/server. For more information on schema evolution, please refer to the internal Immuta documentation page titled
+"Schema Monitoring".
+
+Note the following:
+
+* Enabling or disabling schema evolution requires a schema value is present in the `schemas_to_bulk_enroll` key in the
+  configuration. **When enabling schema evolution for the first time for a remote database**, a bulk enroll of a
+  non-enrolled schema must be run to correctly create the schema evolution record in Immuta
+* Data sources enrolled with schema evolution automatically have table evolution enabled. See the internal Immuta
+  documentation page titled "Schema Monitoring" for more information on table evolution.
+* Schemas and tables are enrolled with the currently authenticated user running `fh-immuta-utils` as the owner
+* Enabling or disabling schema evolution for specific schemas within a remote database/server is not currently
+  supported
+
+Defaults for the naming templates are shown in the example configurations below. Any of the macros shown in the UI in
+the schema evolution section when creating or editing a data source can be used in the template strings. The available
+template strings are:
+
+1. **immuta_name_format**: Template for Immuta data source names
+2. **sql_table_name_format**: Template for Query Engine SQL table names
+3. **sql_schema_name_format**: Template for the Query Engine schema to use when enrolling tables
+
+### Example Query-Backed Data Source Configurations
+
+#### PostgreSQL
 
 An example of a state file for a PostgreSQL database is as follows:
 
@@ -44,15 +70,11 @@ schemas_to_enroll:
 # List of schemas where we want to enroll all tables in each schema
 schemas_to_bulk_enroll:
   - schema_prefix: "baz"
-# Schema evolution enablement and naming templates. Defaults are shown. Any of the macros shown in the UI when creating
-# or editing a data source to enable schema monitoring can be used in the template strings.
-# immuta_name_format = Template for Immuta data source names
-# sql_table_name_format = Template for Query Engine SQL table names
-# sql_schema_name_format = Template for the Query Engine schema to use when enrolling tables
+# Schema evolution enablement and naming templates
 schema_evolution:
   disable_schema_evolution: true
   immuta_name_format: "<user_prefix>_<handler_prefix>_<schema>_<tablename>"
-  sql_table_name_format "<user_prefix>_<handler_prefix>_<schema>_<tablename>"
+  sql_table_name_format: "<user_prefix>_<handler_prefix>_<schema>_<tablename>"
   sql_schema_name_format: "<schema>"
 credentials:
   # Read from environment variable
@@ -68,7 +90,7 @@ tags:
 
 **Note:** For AWS Redshift, use the same format as above, replacing the `handler_type` value with `Redshift`.
 
-## AWS Athena
+#### AWS Athena
 
 An example of a state file for an AWS Athena database is as follows:
 
@@ -91,15 +113,11 @@ schemas_to_enroll:
     table_prefix: bar
 # List of schemas where we want to enroll all tables in each schema
 schemas_to_bulk_enroll:
-# Schema evolution enablement and naming templates. Defaults are shown. Any of the macros shown in the UI when creating
-# or editing a data source to enable schema monitoring can be used in the template strings.
-# immuta_name_format = Template for Immuta data source names
-# sql_table_name_format = Template for Query Engine SQL table names
-# sql_schema_name_format = Template for the Query Engine schema to use when enrolling tables
+# Schema evolution enablement and naming templates
 schema_evolution:
   disable_schema_evolution: true
   immuta_name_format: "<user_prefix>_<handler_prefix>_<schema>_<tablename>"
-  sql_table_name_format "<user_prefix>_<handler_prefix>_<schema>_<tablename>"
+  sql_table_name_format: "<user_prefix>_<handler_prefix>_<schema>_<tablename>"
   sql_schema_name_format: "<schema>"
 credentials:
   # Read from an instance of Hashicorp Vault
@@ -111,7 +129,7 @@ tags:
   ath_foo: ["tag1", "tag2.subtag2"]
 ```
 
-# Data Source Column Tags
+## Data Source Column Tags
 
 Information about what tags to create and how to attach them to columns in data sources should be specified through YAML files created under a `tags` directory within `config_root`.
 

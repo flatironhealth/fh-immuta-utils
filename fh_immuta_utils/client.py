@@ -24,7 +24,8 @@ from .data_source import (
     DataSourceDictionary,
     Handler,
     blob_handler_type,
-    SchemaEvolutionMetadata)
+    SchemaEvolutionMetadata,
+)
 from .policy import GlobalPolicy, make_policy_object_from_json
 from .log import LoggingMixin
 
@@ -521,7 +522,9 @@ class ImmutaClient(LoggingMixin):
         res.raise_for_status()
         return True
 
-    def get_remote_database_test_response(self, dataset_spec: Dict[str, Any]) -> requests.Response:
+    def get_remote_database_test_response(
+        self, dataset_spec: Dict[str, Any]
+    ) -> requests.Response:
         """
         Tests a remote database enrollment.
         :param dataset_spec: dataset configuration dictionary

@@ -2,6 +2,8 @@
 
 ## Data Policies
 
+### Configuration and CLI Entrypoint
+
 fh-immuta-utils supports creating global policies to limit access to data sources based on tags.
 The intended use-case is where access to sensitive data is granted on the basis of membership in IAM groups,
 where sensitive columns in data sources are tagged as such.
@@ -38,10 +40,14 @@ To apply RBAC based on this policy, you can run the following:
 $ conda activate fh-immuta-utils
 $ fh-immuta-utils policies --config-file foo.yml --type data
 ```
+*Note*: To apply both data and subscription policies, skip the `--type` argument which defaults to
+both data and subscription policies being applied.
 
 Running the script above will generate a new global data policy named `policy_1_access_policy` that will:
 * **action** --> mask fields tagged `tag1` using hashing for everyone except when user is a member of group `group1`
 * **circumstance** --> on data sources with columns tagged `tag1`
+
+### Supported Values
 
 The policy can be configured many ways. However, only the following are currently supported values by `fh-immuta-utils`:
 
@@ -55,8 +61,10 @@ The policy can be configured many ways. However, only the following are currentl
 
 ## Subscription Policies
 
+### Configuration and CLI Entrypoint
+
 fh-immuta-utils also allows creating subscription policies, where access to a data source is based on
-membership in a particular IAM group. Subscription policies in Immuta dictate who can subscribe to data sources, 
+membership in a particular IAM group. Subscription policies in Immuta dictate who can subscribe to data sources,
 which allows for querying those data sources. Similar to data policies, they are based on **actions** and **circumstances**:
 
 * **Actions** define how the policy restricts, and for whom it restricts.
@@ -66,7 +74,7 @@ As an example, consider the following subscription policy:
 
 ```yaml
 SUBSCRIPTION_POLICIES:
-  subscription_1:
+  subscription_01:
     staged: false
     actions: # do not subscribe to a data source
       - exceptions:
@@ -80,7 +88,10 @@ SUBSCRIPTION_POLICIES:
       - operator: "or"
         type: "tags"
         tags: ["tag01"] # for data sources tagged with "tag01"
+
+
 ```
+
 To apply RBAC based on this policy, you can run the following:
 
 ``` bash
@@ -91,9 +102,11 @@ $ fh-immuta-utils policies --config-file foo.yml --type subscription
 *Note*: To apply both data and subscription policies, skip the `--type` argument which defaults to
 both data and subscription policies being applied.
 
-Running the script above will generate a new global subscription policy named `subscription_1_subscription_policy` that will:
+Running the script above will generate a new global subscription policy named `subscription_01_subscription_policy` that will:
 * **action** --> deny subscription except for users who are in the group `group01`
 * **circumstance** --> for data sources tagged with `tag01`
+
+### Supported Values
 
 Similar to data policies, subscription policies can be configured many ways. However, only the following are currently supported values by `fh-immuta-utils`:
 

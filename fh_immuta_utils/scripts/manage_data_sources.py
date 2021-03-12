@@ -31,7 +31,8 @@ from fh_immuta_utils.data_source import (
     make_handler_metadata,
     make_bulk_create_objects,
     SchemaEvolutionMetadata,
-    blob_handler_type)
+    blob_handler_type,
+)
 
 if TYPE_CHECKING:
     from fh_immuta_utils.client import ImmutaClient
@@ -76,7 +77,9 @@ def main(config_file: str, glob_prefix: str, debug: bool, dry_run: bool) -> bool
         credentials = retrieve_credentials(dataset_spec["credentials"])
         dataset_spec["username"] = credentials["username"]
         dataset_spec["password"] = credentials["password"]
-        dataset_spec["owner_profile_id"] = client.get_current_user_information()["profile"]["id"]
+        dataset_spec["owner_profile_id"] = client.get_current_user_information()[
+            "profile"
+        ]["id"]
 
         if skip_dataset_enrollment(client, dataset_spec):
             continue
@@ -110,7 +113,10 @@ def main(config_file: str, glob_prefix: str, debug: bool, dry_run: bool) -> bool
                         )
                     if not dry_run:
                         if not create_data_source(
-                            client=client, data_source=data_source, handler=handler, schema_evolution=schema_evolution
+                            client=client,
+                            data_source=data_source,
+                            handler=handler,
+                            schema_evolution=schema_evolution,
                         ):
                             failed_tables.add(data_source.name)
         if failed_tables:
@@ -139,7 +145,7 @@ def data_sources_enroll_iterator(
     schema_table_mapping: Dict[str, List[Dict[str, str]]],
     schema_obj: Dict[str, str],
     config: Dict[str, Any],
-) -> Iterator[Tuple[DataSource, Handler]]:
+) -> Iterator[Tuple[DataSource, Handler, SchemaEvolutionMetadata]]:
     LOGGER.info("Processing schema_prefix: %s", schema_obj["schema_prefix"])
 
     matches_prefix = partial(fnmatch.fnmatch, pat=schema_obj["schema_prefix"])
@@ -168,7 +174,7 @@ def data_sources_bulk_enroll_iterator(
     schema_table_mapping: Dict[str, List[Dict[str, str]]],
     schema_obj: Dict[str, str],
     config: Dict[str, Any],
-) -> Iterator[Tuple[DataSource, List[Handler]]]:
+) -> Iterator[Tuple[DataSource, List[Handler], SchemaEvolutionMetadata]]:
 
     LOGGER.info("Processing schema_prefix: %s", schema_obj["schema_prefix"])
 
@@ -206,7 +212,9 @@ def create_data_source(
         return False
 
 
-def is_schema_evolution_enabled(client: "ImmutaClient", dataset_spec: Dict[str, Any]) -> bool:
+def is_schema_evolution_enabled(
+    client: "ImmutaClient", dataset_spec: Dict[str, Any]
+) -> bool:
     """
     Determines if schema evolution is enabled for the remote database.
     :param client: authenticated Immuta client
@@ -222,27 +230,36 @@ def is_schema_evolution_enabled(client: "ImmutaClient", dataset_spec: Dict[str, 
     return False
 
 
-def skip_dataset_enrollment(client: "ImmutaClient", dataset_spec: Dict[str, Any]) -> bool:
+def skip_dataset_enrollment(
+    client: "ImmutaClient", dataset_spec: Dict[str, Any]
+) -> bool:
     """
     Evaluates scenarios to determine if dataset enrollment should be skipped.
     :param client: authenticated Immuta client
     :param dataset_spec: dataset configuration dictionary
     :return: bool
     """
-    disable_schema_evolution = dataset_spec.get("schema_evolution", {}).get("disable_schema_evolution", True)
+    disable_schema_evolution = dataset_spec.get("schema_evolution", {}).get(
+        "disable_schema_evolution", True
+    )
     schema_evolution_status = is_schema_evolution_enabled(client, dataset_spec)
-    # skip enrollment if remote database is already enrolled, schema evolution is enabled, and config does not disable
-    # schema evolution
+
+    # skip dataset enrollment if remote database is already enrolled, schema evolution is enabled, and config does not
+    # disable schema evolution
     if schema_evolution_status and not disable_schema_evolution:
         LOGGER.info(
             f"{dataset_spec['hostname']}/{dataset_spec['database']} is already enrolled and monitoring for schema "
-            f"changes. Skipping enrollment.")
+            f"changes. Skipping enrollment."
+        )
         return True
-
     if not schema_evolution_status and not disable_schema_evolution:
-        LOGGER.info(f"Enabling schema evolution for {dataset_spec['hostname']}/{dataset_spec['database']}")
+        LOGGER.info(
+            f"Enabling schema evolution for {dataset_spec['hostname']}/{dataset_spec['database']}"
+        )
     if schema_evolution_status and disable_schema_evolution:
-        LOGGER.info(f"Disabling schema evolution for {dataset_spec['hostname']}/{dataset_spec['database']}")
+        LOGGER.info(
+            f"Disabling schema evolution for {dataset_spec['hostname']}/{dataset_spec['database']}"
+        )
 
     return False
 
