@@ -38,23 +38,56 @@ PREFIX_MAP = {
     "Amazon S3": "s3",
     "Amazon Athena": "ath",
 }
+MAX_IMMUTA_NAME_LIMIT = 255
+MAX_POSTGRES_NAME_LIMIT = 255
 
 
 def blob_handler_type(handler_type: str) -> str:
     return HANDLER_TYPES.get(handler_type, handler_type)
 
 
-def make_table_name(
+def make_immuta_datasource_name(
     handler_type: str, schema: str, table: str, user_prefix: Optional[str]
 ) -> str:
     """
-    Returns table name with format <handler_prefix>_<schema>_<table>. If provided, <user_prefix>_ is prepended.
+    Returns a table name that's guaranteed to be unique and within the Immuta data source name max char limit (255)
     """
     table_name = ""
     if user_prefix:
         table_name = f"{user_prefix}_"
     table_name += f"{PREFIX_MAP[handler_type]}_{schema}_{table}"
-    return table_name
+    if table_name is None:
+        return None
+    if len(table_name) <= MAX_IMMUTA_NAME_LIMIT:
+        return table_name
+    import hashlib
+
+    return (
+        table_name[: MAX_IMMUTA_NAME_LIMIT - 8]
+        + hashlib.md5(table_name.encode()).hexdigest()[:8]
+    )
+
+
+def make_postgres_table_name(
+    handler_type: str, schema: str, table: str, user_prefix: Optional[str]
+) -> str:
+    """
+    Returns table name that has a shortened prefix and conforms to the Immuta-designated Postgres max char limit (255)
+    """
+    table_name = ""
+    if user_prefix:
+        table_name = f"{user_prefix}_"
+    table_name += f"{PREFIX_MAP[handler_type]}_{schema}_{table}"
+    if len(table_name) < MAX_POSTGRES_NAME_LIMIT:
+        return table_name
+    trunc_table_name = table_name[:MAX_POSTGRES_NAME_LIMIT]
+    LOGGER.warning(
+        "Postgres table name longer than %s characters! Table %s truncated to %s",
+        MAX_POSTGRES_NAME_LIMIT,
+        table_name,
+        trunc_table_name,
+    )
+    return trunc_table_name
 
 
 class BlobHandler(BaseModel):
@@ -187,8 +220,14 @@ def make_bulk_create_objects(
     """
     handlers = []
     for table in tables:
-        table_name = make_table_name(
+        postgres_table_name = make_postgres_table_name(
             handler_type=config["handler_type"],
+            schema=schema,
+            table=table,
+            user_prefix=user_prefix,
+        )
+        immuta_datasource_name = make_immuta_datasource_name(
+            handler_type=["handler_type"],
             schema=schema,
             table=table,
             user_prefix=user_prefix,
@@ -197,8 +236,8 @@ def make_bulk_create_objects(
             table=table,
             schema=schema,
             config=config,
-            bodataTableName=table_name,
-            dataSourceName=table_name,
+            bodataTableName=postgres_table_name,
+            dataSourceName=immuta_datasource_name,
         )
         handlers.append(handler)
 
@@ -221,8 +260,14 @@ def to_immuta_objects(
     Returns a tuple containing relevant details to create a new data source
     in Immuta from the source schema
     """
-    table_name = make_table_name(
+    postgres_table_name = make_postgres_table_name(
         handler_type=config["handler_type"],
+        schema=schema,
+        table=table,
+        user_prefix=user_prefix,
+    )
+    immuta_datasource_name = make_immuta_datasource_name(
+        handler_type=["handler_type"],
         schema=schema,
         table=table,
         user_prefix=user_prefix,
@@ -232,12 +277,12 @@ def to_immuta_objects(
         schema=schema,
         config=config,
         columns=columns,
-        bodataTableName=table_name,
-        dataSourceName=table_name,
+        bodataTableName=postgres_table_name,
+        dataSourceName=immuta_datasource_name,
     )
     ds = DataSource(
-        name=table_name,
-        sqlTableName=table_name,
+        name=immuta_datasource_name,
+        sqlTableName=postgres_table_name,
         blobHandlerType=config["handler_type"],
         blobHandler=BlobHandler(scheme="https"),
         recordFormat="json",
