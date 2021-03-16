@@ -1,7 +1,7 @@
 from typing import Dict, Any, Optional, List, Tuple
 import logging
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 LOGGER = logging.getLogger(__name__)
 
@@ -38,19 +38,19 @@ PREFIX_MAP = {
     "Amazon S3": "s3",
     "Amazon Athena": "ath",
 }
-MAX_IMMUTA_NAME_LIMIT = 55
-MAX_POSTGRES_NAME_LIMIT = 63
+MAX_IMMUTA_NAME_LIMIT = 255
+MAX_POSTGRES_NAME_LIMIT = 255
 
 
 def blob_handler_type(handler_type: str) -> str:
     return HANDLER_TYPES.get(handler_type, handler_type)
 
 
-def make_immuta_table_name(
+def make_immuta_datasource_name(
     handler_type: str, schema: str, table: str, user_prefix: Optional[str]
 ) -> str:
     """
-    Returns a table name that's guaranteed to be unique and within the max char limit (55)
+    Returns a table name that's guaranteed to be unique and within the Immuta data source name max char limit (255)
     """
     table_name = ""
     if user_prefix:
@@ -72,7 +72,7 @@ def make_postgres_table_name(
     handler_type: str, schema: str, table: str, user_prefix: Optional[str]
 ) -> str:
     """
-    Returns table name that has a shortened prefix and conforms to the Postgres max char limit (63)
+    Returns table name that has a shortened prefix and conforms to the Immuta-designated Postgres max char limit (255)
     """
     table_name = ""
     if user_prefix:
@@ -82,7 +82,8 @@ def make_postgres_table_name(
         return table_name
     trunc_table_name = table_name[:MAX_POSTGRES_NAME_LIMIT]
     LOGGER.warning(
-        "Postgres table name too long! Table %s truncated to %s",
+        "Postgres table name longer than %s characters! Table %s truncated to %s",
+        MAX_POSTGRES_NAME_LIMIT,
         table_name,
         trunc_table_name,
     )
@@ -126,6 +127,22 @@ class DataSource(BaseModel):
     # or queryable (metadata is dynamically queried)
     type: str = "queryable"
     useDatesAsDirectory: bool = False
+
+
+class SchemaEvolutionMetadataConfigTemplate(BaseModel):
+    nameFormat: str = Field(..., alias="dataSourceNameFormat")
+    tableFormat: str = Field(..., alias="queryEngineTableNameFormat")
+    sqlSchemaNameFormat: str = Field(..., alias="queryEngineSchemaNameFormat")
+
+
+class SchemaEvolutionMetadataConfig(BaseModel):
+    nameTemplate: SchemaEvolutionMetadataConfigTemplate
+
+
+class SchemaEvolutionMetadata(BaseModel):
+    ownerProfileId: int
+    disabled: bool = True
+    config: Optional[SchemaEvolutionMetadataConfig] = None
 
 
 class DataSourceColumn(BaseModel):
@@ -196,33 +213,40 @@ def make_bulk_create_objects(
     schema: str,
     tables: List[str],
     user_prefix: Optional[str] = None,
-) -> Tuple[DataSource, List[Handler]]:
+) -> Tuple[DataSource, List[Handler], SchemaEvolutionMetadata]:
     """
     Returns a (data source, metadata) tuple containing relevant details to bulk create new data
     sources in Immuta from the source schema
     """
     handlers = []
     for table in tables:
-        external_table_name = make_postgres_table_name(
-            config["handler_type"], schema, table, user_prefix
+        postgres_table_name = make_postgres_table_name(
+            handler_type=config["handler_type"],
+            schema=schema,
+            table=table,
+            user_prefix=user_prefix,
         )
-        immuta_table_name = make_immuta_table_name(
-            config["handler_type"], schema, table, user_prefix
+        immuta_datasource_name = make_immuta_datasource_name(
+            handler_type=config["handler_type"],
+            schema=schema,
+            table=table,
+            user_prefix=user_prefix,
         )
-
         handler = make_handler_metadata(
             table=table,
             schema=schema,
             config=config,
-            bodataTableName=external_table_name,
-            dataSourceName=immuta_table_name,
+            bodataTableName=postgres_table_name,
+            dataSourceName=immuta_datasource_name,
         )
         handlers.append(handler)
 
     ds = DataSource(
         blobHandlerType=config["handler_type"], recordFormat="json", type="queryable"
     )
-    return (ds, handlers)
+    schema_evolution = make_schema_evolution_metadata(config)
+
+    return ds, handlers, schema_evolution
 
 
 def to_immuta_objects(
@@ -231,31 +255,34 @@ def to_immuta_objects(
     table: str,
     columns: List[DataSourceColumn],
     user_prefix: Optional[str] = None,
-) -> Tuple[DataSource, Handler]:
+) -> Tuple[DataSource, Handler, SchemaEvolutionMetadata]:
     """
     Returns a tuple containing relevant details to create a new data source
     in Immuta from the source schema
     """
-    external_table_name = make_postgres_table_name(
+    postgres_table_name = make_postgres_table_name(
         handler_type=config["handler_type"],
         schema=schema,
         table=table,
         user_prefix=user_prefix,
     )
-    immuta_table_name = make_immuta_table_name(
-        config["handler_type"], schema, table, user_prefix
+    immuta_datasource_name = make_immuta_datasource_name(
+        handler_type=config["handler_type"],
+        schema=schema,
+        table=table,
+        user_prefix=user_prefix,
     )
     handler = make_handler_metadata(
         table=table,
         schema=schema,
         config=config,
         columns=columns,
-        bodataTableName=external_table_name,
-        dataSourceName=immuta_table_name,
+        bodataTableName=postgres_table_name,
+        dataSourceName=immuta_datasource_name,
     )
     ds = DataSource(
-        name=immuta_table_name,
-        sqlTableName=external_table_name,
+        name=immuta_datasource_name,
+        sqlTableName=postgres_table_name,
         blobHandlerType=config["handler_type"],
         blobHandler=BlobHandler(scheme="https"),
         recordFormat="json",
@@ -264,7 +291,9 @@ def to_immuta_objects(
         description="bar",
         # owner="foo",
     )
-    return (ds, handler)
+    schema_evolution = make_schema_evolution_metadata(config)
+
+    return ds, handler, schema_evolution
 
 
 def make_handler_metadata(
@@ -298,3 +327,45 @@ def make_handler_metadata(
         )
     handler = Handler(metadata=metadata)
     return handler
+
+
+def make_schema_evolution_metadata(config: Dict[str, Any]) -> SchemaEvolutionMetadata:
+    """
+    Builds metadata for the schema evolution object. Immuta table name and SQL table name template defaults match the
+    pattern defined in make_table_name()
+    :param config: dataset configuration dictionary
+    :return: SchemaEvolutionMetadata object
+    """
+    user_prefix = ""
+    if config.get("prefix"):
+        user_prefix = f"{config.get('prefix')}_"
+    handler_prefix = PREFIX_MAP[config["handler_type"]]
+    datasource_name_format_default = (
+        f"{user_prefix}{handler_prefix}_<schema>_<tablename>"
+    )
+    query_engine_table_name_format_default = (
+        f"{user_prefix}{handler_prefix}_<schema>_<tablename>"
+    )
+    query_engine_schema_name_format_default = "<schema>"
+
+    return SchemaEvolutionMetadata(
+        ownerProfileId=config["owner_profile_id"],
+        disabled=config.get("schema_evolution", {}).get(
+            "disable_schema_evolution", True
+        ),
+        config=SchemaEvolutionMetadataConfig(
+            nameTemplate=SchemaEvolutionMetadataConfigTemplate(
+                dataSourceNameFormat=config.get("schema_evolution", {}).get(
+                    "datasource_name_format", datasource_name_format_default
+                ),
+                queryEngineTableNameFormat=config.get("schema_evolution", {}).get(
+                    "query_engine_table_name_format",
+                    query_engine_table_name_format_default,
+                ),
+                queryEngineSchemaNameFormat=config.get("schema_evolution", {}).get(
+                    "query_engine_schema_name_format",
+                    query_engine_schema_name_format_default,
+                ),
+            )
+        ),
+    )

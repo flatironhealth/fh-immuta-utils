@@ -24,6 +24,7 @@ from .data_source import (
     DataSourceDictionary,
     Handler,
     blob_handler_type,
+    SchemaEvolutionMetadata,
 )
 from .policy import GlobalPolicy, make_policy_object_from_json
 from .log import LoggingMixin
@@ -238,7 +239,7 @@ class ImmutaClient(LoggingMixin):
         self, id: int, dictionary: DataSourceDictionary
     ) -> bool:
         res = self._session.put(
-            f"dictionary/{id}", data=dictionary.json(skip_defaults=True)
+            f"dictionary/{id}", data=dictionary.json(exclude_unset=True)
         )
         res.raise_for_status()
         return True
@@ -257,6 +258,7 @@ class ImmutaClient(LoggingMixin):
         self,
         data_source: DataSource,
         handler: Union[Handler, Sequence[Handler]],
+        schema_evolution: SchemaEvolutionMetadata,
         policy_handler=None,
         handler_base_url=None,
         dictionary=None,
@@ -264,9 +266,9 @@ class ImmutaClient(LoggingMixin):
         request_prefix = blob_handler_type(data_source.blobHandlerType)
         is_bulk_insert = isinstance(handler, list)
         if is_bulk_insert:
-            handlers = [h.dict(by_alias=True, skip_defaults=True) for h in handler]
+            handlers = [h.dict(by_alias=True, exclude_unset=True) for h in handler]
         elif isinstance(handler, Handler):  # type check here to make mypy happy
-            handlers = handler.dict(by_alias=True, skip_defaults=True)
+            handlers = handler.dict(by_alias=True, exclude_unset=True)
         else:
             raise RuntimeError(
                 "Invalid format for given blob handler. Expected either a list or a"
@@ -274,7 +276,10 @@ class ImmutaClient(LoggingMixin):
             )
         post_body = {
             "handler": handlers,
-            "dataSource": data_source.dict(by_alias=True, skip_defaults=True),
+            "dataSource": data_source.dict(by_alias=True, exclude_unset=True),
+            "schemaEvolution": schema_evolution.dict(
+                by_alias=False, exclude_unset=True
+            ),
         }
         if policy_handler:
             post_body["policyRules"] = policy_handler["jsonPolicies"]
@@ -518,6 +523,24 @@ class ImmutaClient(LoggingMixin):
         res = self._session.post(f"tag/datasource/{id}", json=tag_data)
         res.raise_for_status()
         return True
+
+    def get_remote_database_test_response(
+        self, dataset_spec: Dict[str, Any]
+    ) -> requests.Response:
+        """
+        Tests a remote database enrollment.
+        :param dataset_spec: dataset configuration dictionary
+        :return: test response
+        """
+        request_prefix = blob_handler_type(dataset_spec["handler_type"])
+        remote_database = dataset_spec["database"]
+        headers = self.make_generic_odbc_request_headers(dataset_spec)
+        path = f"{request_prefix}/database/{remote_database}/test"
+        res = self._session.get(path, headers=headers)
+        return res
+
+    def get_current_user_information(self) -> Dict[str, Any]:
+        return self.get("/bim/rpc/user/current")
 
 
 def get_client(base_url: str, auth_config: Dict[str, Any], **kwargs) -> ImmutaClient:
