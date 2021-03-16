@@ -1,7 +1,7 @@
 from typing import Dict, Any, Optional, List, Tuple
 import logging
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 LOGGER = logging.getLogger(__name__)
 
@@ -97,9 +97,9 @@ class DataSource(BaseModel):
 
 
 class SchemaEvolutionMetadataConfigTemplate(BaseModel):
-    nameFormat: str
-    tableFormat: str
-    sqlSchemaNameFormat: str
+    nameFormat: str = Field(..., alias='dataSourceNameFormat')
+    tableFormat: str = Field(..., alias='queryEngineTableNameFormat')
+    sqlSchemaNameFormat: str = Field(..., alias='queryEngineSchemaNameFormat')
 
 
 class SchemaEvolutionMetadataConfig(BaseModel):
@@ -295,11 +295,11 @@ def make_schema_evolution_metadata(config: Dict[str, Any]) -> SchemaEvolutionMet
     if config.get("prefix"):
         user_prefix = f"{config.get('prefix')}_"
     handler_prefix = PREFIX_MAP[config["handler_type"]]
-    immuta_name_format_default = f"{user_prefix}{handler_prefix}_<schema>_<tablename>"
-    sql_table_name_format_default = (
+    datasource_name_format_default = f"{user_prefix}{handler_prefix}_<schema>_<tablename>"
+    query_engine_table_name_format_default = (
         f"{user_prefix}{handler_prefix}_<schema>_<tablename>"
     )
-    sql_schema_name_format_default = "<schema>"
+    query_engine_schema_name_format_default = "<schema>"
 
     return SchemaEvolutionMetadata(
         ownerProfileId=config["owner_profile_id"],
@@ -308,14 +308,14 @@ def make_schema_evolution_metadata(config: Dict[str, Any]) -> SchemaEvolutionMet
         ),
         config=SchemaEvolutionMetadataConfig(
             nameTemplate=SchemaEvolutionMetadataConfigTemplate(
-                nameFormat=config.get("schema_evolution", {}).get(
-                    "immuta_name_format", immuta_name_format_default
+                dataSourceNameFormat=config.get("schema_evolution", {}).get(
+                    "datasource_name_format", datasource_name_format_default
                 ),
-                tableFormat=config.get("schema_evolution", {}).get(
-                    "sql_table_name_format", sql_table_name_format_default
+                queryEngineTableNameFormat=config.get("schema_evolution", {}).get(
+                    "query_engine_table_name_format", query_engine_table_name_format_default
                 ),
-                sqlSchemaNameFormat=config.get("schema_evolution", {}).get(
-                    "sql_schema_name_format", sql_schema_name_format_default
+                queryEngineSchemaNameFormat=config.get("schema_evolution", {}).get(
+                    "query_engine_schema_name_format", query_engine_schema_name_format_default
                 ),
             )
         ),

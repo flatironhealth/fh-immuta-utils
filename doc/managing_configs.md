@@ -44,9 +44,9 @@ Defaults for the naming templates are shown in the example configurations below.
 the schema evolution section when creating or editing a data source can be used in the template strings. The available
 template strings are:
 
-1. **immuta_name_format**: Template for Immuta data source names
-2. **sql_table_name_format**: Template for Query Engine SQL table names
-3. **sql_schema_name_format**: Template for the Query Engine schema to use when enrolling tables
+1. **datasource_name_format**: Template for Immuta data source names
+2. **query_engine_table_name_format**: Template for Query Engine SQL table names
+3. **query_engine_schema_name_format**: Template for the Query Engine schema to use when enrolling tables
 
 ### Example Query-Backed Data Source Configurations
 
@@ -73,9 +73,9 @@ schemas_to_bulk_enroll:
 # Schema evolution enablement and naming templates
 schema_evolution:
   disable_schema_evolution: true
-  immuta_name_format: "<user_prefix>_<handler_prefix>_<schema>_<tablename>"
-  sql_table_name_format: "<user_prefix>_<handler_prefix>_<schema>_<tablename>"
-  sql_schema_name_format: "<schema>"
+  datasource_name_format: "<user_prefix>_<handler_prefix>_<schema>_<tablename>"
+  query_engine_table_name_format: "<user_prefix>_<handler_prefix>_<schema>_<tablename>"
+  query_engine_schema_name_format: "<schema>"
 credentials:
   # Read from environment variable
   source: ENV
@@ -116,9 +116,9 @@ schemas_to_bulk_enroll:
 # Schema evolution enablement and naming templates
 schema_evolution:
   disable_schema_evolution: true
-  immuta_name_format: "<user_prefix>_<handler_prefix>_<schema>_<tablename>"
-  sql_table_name_format: "<user_prefix>_<handler_prefix>_<schema>_<tablename>"
-  sql_schema_name_format: "<schema>"
+  datasource_name_format: "<user_prefix>_<handler_prefix>_<schema>_<tablename>"
+  query_engine_table_name_format: "<user_prefix>_<handler_prefix>_<schema>_<tablename>"
+  query_engine_schema_name_format: "<schema>"
 credentials:
   # Read from an instance of Hashicorp Vault
   source: VAULT

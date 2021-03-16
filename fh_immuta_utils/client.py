@@ -277,7 +277,7 @@ class ImmutaClient(LoggingMixin):
         post_body = {
             "handler": handlers,
             "dataSource": data_source.dict(by_alias=True, exclude_unset=True),
-            "schemaEvolution": schema_evolution.dict(by_alias=True, exclude_unset=True),
+            "schemaEvolution": schema_evolution.dict(by_alias=False, exclude_unset=True),
         }
         if policy_handler:
             post_body["policyRules"] = policy_handler["jsonPolicies"]
