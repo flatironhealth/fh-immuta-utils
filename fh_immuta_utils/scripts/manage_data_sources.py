@@ -189,7 +189,7 @@ def data_sources_bulk_enroll_iterator(
             schema=schema,
             tables=[table["tableName"] for table in tables],
             config=config,
-            user_prefix=config.get("prefix"),
+            user_prefix=config.get("user_prefix"),
         )
         yield data_source, handlers, schema_evolution
 

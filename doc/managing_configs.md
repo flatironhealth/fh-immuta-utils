@@ -59,7 +59,7 @@ hostname: my-database.foo.com
 port: 5439
 database: db-name
 # Prefix to prepend to name of data source created in Immuta
-prefix:
+user_prefix:
 handler_type: PostgreSQL
 # List of schemas to enroll where for each schema,
 # we only want to enroll tables with a specific name/prefix
@@ -100,7 +100,7 @@ An example of a state file for an AWS Athena database is as follows:
 region: us-east-1
 hostname: us-east-1
 database: my-database
-# Prefix to add to name of data source created in Immuta
+# Prefix to prepend to name of data source created in Immuta
 user_prefix:
 handler_type: Amazon Athena
 queryResultLocationBucket: bucket-where-results-should-be-stored
