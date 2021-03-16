@@ -284,9 +284,9 @@ SCHEMA_EVOLUTION_METADATA_TESTS = {
             disabled=True,
             config=ds.SchemaEvolutionMetadataConfig(
                 nameTemplate={
-                    "nameFormat": "rs_<schema>_<tablename>",
-                    "tableFormat": "rs_<schema>_<tablename>",
-                    "sqlSchemaNameFormat": "<schema>",
+                    "dataSourceNameFormat": "rs_<schema>_<tablename>",
+                    "queryEngineTableNameFormat": "rs_<schema>_<tablename>",
+                    "queryEngineSchemaNameFormat": "<schema>",
                 }
             ),
         ),
@@ -301,9 +301,9 @@ SCHEMA_EVOLUTION_METADATA_TESTS = {
             disabled=True,
             config=ds.SchemaEvolutionMetadataConfig(
                 nameTemplate={
-                    "nameFormat": "ath_<schema>_<tablename>",
-                    "tableFormat": "ath_<schema>_<tablename>",
-                    "sqlSchemaNameFormat": "<schema>",
+                    "dataSourceNameFormat": "ath_<schema>_<tablename>",
+                    "queryEngineTableNameFormat": "ath_<schema>_<tablename>",
+                    "queryEngineSchemaNameFormat": "<schema>",
                 }
             ),
         ),
@@ -314,9 +314,9 @@ SCHEMA_EVOLUTION_METADATA_TESTS = {
             "handler_type": "Redshift",
             "schema_evolution": {
                 "disable_schema_evolution": "true",
-                "immuta_name_format": "foo",
-                "sql_table_name_format": "bar",
-                "sql_schema_name_format": "biz",
+                "datasource_name_format": "foo",
+                "query_engine_table_name_format": "bar",
+                "query_engine_schema_name_format": "biz",
             },
         },
         ds.SchemaEvolutionMetadata(
@@ -324,9 +324,9 @@ SCHEMA_EVOLUTION_METADATA_TESTS = {
             disabled=True,
             config=ds.SchemaEvolutionMetadataConfig(
                 nameTemplate={
-                    "nameFormat": "foo",
-                    "tableFormat": "bar",
-                    "sqlSchemaNameFormat": "biz",
+                    "dataSourceNameFormat": "foo",
+                    "queryEngineTableNameFormat": "bar",
+                    "queryEngineSchemaNameFormat": "biz",
                 }
             ),
         ),
@@ -337,9 +337,9 @@ SCHEMA_EVOLUTION_METADATA_TESTS = {
             "handler_type": "Redshift",
             "schema_evolution": {
                 "disable_schema_evolution": "false",
-                "immuta_name_format": "foo",
-                "sql_table_name_format": "bar",
-                "sql_schema_name_format": "biz",
+                "datasource_name_format": "foo",
+                "query_engine_table_name_format": "bar",
+                "query_engine_schema_name_format": "biz",
             },
         },
         ds.SchemaEvolutionMetadata(
@@ -347,9 +347,9 @@ SCHEMA_EVOLUTION_METADATA_TESTS = {
             disabled=False,
             config=ds.SchemaEvolutionMetadataConfig(
                 nameTemplate={
-                    "nameFormat": "foo",
-                    "tableFormat": "bar",
-                    "sqlSchemaNameFormat": "biz",
+                    "dataSourceNameFormat": "foo",
+                    "queryEngineTableNameFormat": "bar",
+                    "queryEngineSchemaNameFormat": "biz",
                 }
             ),
         ),
