@@ -23,6 +23,14 @@ The supported auth schemes can be found in `config.py`.
 All specs for enrolled data sources should be placed inside a directory named `enrolled_datasets` within the `config_root`.
 fh-immuta-utils globs for all YAML files within that directory and then processes each.
 
+### Query Engine Table Name and Immuta Data Source Name Character Limits
+
+A character limit is enforced on all enrolled data sources as follows:
+
+* **Query engine table name**: 255 character limit. If exceeded, name is truncated at the end to meet the limit.
+* **Immuta data source name**: 255 character limit. If exceeded, name is truncated to (limit - 8) characters, and the
+  last 8 characters are replaced with a hash generated from the name.
+
 ### Schema Evolution
 
 Schema evolution (aka schema monitoring) can be enabled or disabled across all query-backed data sources for a remote
