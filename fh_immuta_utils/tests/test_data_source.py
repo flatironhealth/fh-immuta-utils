@@ -125,6 +125,7 @@ POSTGRES_NAME_TESTS = [
     ),
 ]
 
+
 @pytest.mark.parametrize(
     "handler_type,schema,table,user_prefix,expected_name", IMMUTA_DATASOURCE_NAME_TESTS
 )
@@ -136,9 +137,10 @@ def test_make_immuta_datasource_name(
     )
     assert len(name) <= ds.MAX_IMMUTA_NAME_LIMIT
     assert (
-            name[: ds.MAX_IMMUTA_NAME_LIMIT - 8]
-            == expected_name[: ds.MAX_IMMUTA_NAME_LIMIT - 8]
+        name[: ds.MAX_IMMUTA_NAME_LIMIT - 8]
+        == expected_name[: ds.MAX_IMMUTA_NAME_LIMIT - 8]
     )
+
 
 @pytest.mark.parametrize(
     "handler_type,schema,table,user_prefix,expected_name", POSTGRES_NAME_TESTS

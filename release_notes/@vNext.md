@@ -4,7 +4,7 @@
 
 ### Added
 - Ability to control schema evolution settings for a remote database/server from configuration.
-### Removed
-- Immuta data source and SQL table name truncation logic. SQL table name max length is now 255 characters in the Query
-  Engine, and the Immuta data source name max length is at least 255 characters. Users with previously truncated data
-  source or SQL table names should delete and re-enroll those data sources to enroll the full names.
+### Changed
+- Immuta data source and query engine table name truncation character limits. Limits for both are now set to 255 to
+  align with the accepted limits by the Immuta application. Users with previously truncated data source or query engine
+  table names should delete and re-enroll those data sources to enroll the full names.
