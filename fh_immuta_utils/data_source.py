@@ -227,7 +227,7 @@ def make_bulk_create_objects(
             user_prefix=user_prefix,
         )
         immuta_datasource_name = make_immuta_datasource_name(
-            handler_type=["handler_type"],
+            handler_type=config["handler_type"],
             schema=schema,
             table=table,
             user_prefix=user_prefix,
@@ -267,7 +267,7 @@ def to_immuta_objects(
         user_prefix=user_prefix,
     )
     immuta_datasource_name = make_immuta_datasource_name(
-        handler_type=["handler_type"],
+        handler_type=config["handler_type"],
         schema=schema,
         table=table,
         user_prefix=user_prefix,

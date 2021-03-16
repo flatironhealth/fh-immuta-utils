@@ -12,7 +12,7 @@ NameTestKeys = namedtuple(
     "NameTestKeys", ["handler_type", "schema", "table", "user_prefix", "expected_name"]
 )
 
-TABLE_NAME_TESTS = [
+IMMUTA_DATASOURCE_NAME_TESTS = [
     NameTestKeys(
         handler_type="PostgreSQL",
         schema="foo",
@@ -26,6 +26,24 @@ TABLE_NAME_TESTS = [
         table="barbazquxquux",
         user_prefix="quuz",
         expected_name=f"quuz_{ds.PREFIX_MAP['PostgreSQL']}_foo_barbazquxquux",
+    ),
+    NameTestKeys(
+        handler_type="PostgreSQL",
+        schema="foo",
+        table=f"{'a' * (ds.MAX_IMMUTA_NAME_LIMIT - 7)}",
+        user_prefix="",
+        expected_name=(
+            f"{ds.PREFIX_MAP['PostgreSQL']}_foo_{'a' * (ds.MAX_IMMUTA_NAME_LIMIT - 7)}"
+        ),
+    ),
+    NameTestKeys(
+        handler_type="PostgreSQL",
+        schema="foo",
+        table=f"{'a' * ds.MAX_IMMUTA_NAME_LIMIT}",
+        user_prefix="",
+        expected_name=(
+            f"{ds.PREFIX_MAP['PostgreSQL']}_foo_{'a' * (ds.MAX_IMMUTA_NAME_LIMIT - 7)}"
+        ),
     ),
     NameTestKeys(
         handler_type="Redshift",
@@ -51,16 +69,88 @@ TABLE_NAME_TESTS = [
 ]
 
 
+POSTGRES_NAME_TESTS = [
+    NameTestKeys(
+        handler_type="PostgreSQL",
+        schema="foo",
+        table="barbazquxquux",
+        user_prefix="",
+        expected_name=f"{ds.PREFIX_MAP['PostgreSQL']}_foo_barbazquxquux",
+    ),
+    NameTestKeys(
+        handler_type="PostgreSQL",
+        schema="foo",
+        table="barbazquxquux",
+        user_prefix="quuz",
+        expected_name=f"quuz_{ds.PREFIX_MAP['PostgreSQL']}_foo_barbazquxquux",
+    ),
+    NameTestKeys(
+        handler_type="PostgreSQL",
+        schema="foo",
+        table=f"{'a'*(ds.MAX_POSTGRES_NAME_LIMIT - 7)}",
+        user_prefix="",
+        expected_name=(
+            f"{ds.PREFIX_MAP['PostgreSQL']}_foo_{'a'*(ds.MAX_POSTGRES_NAME_LIMIT - 7)}"
+        ),
+    ),
+    NameTestKeys(
+        handler_type="PostgreSQL",
+        schema="foo",
+        table=f"{'a'*ds.MAX_POSTGRES_NAME_LIMIT}",
+        user_prefix="",
+        expected_name=(
+            f"{ds.PREFIX_MAP['PostgreSQL']}_foo_{'a'*(ds.MAX_POSTGRES_NAME_LIMIT - 7)}"
+        ),
+    ),
+    NameTestKeys(
+        handler_type="Redshift",
+        schema="foo",
+        table="barbazquxquux",
+        user_prefix="",
+        expected_name=f"{ds.PREFIX_MAP['Redshift']}_foo_barbazquxquux",
+    ),
+    NameTestKeys(
+        handler_type="Amazon S3",
+        schema="foo",
+        table="barbazquxquux",
+        user_prefix="",
+        expected_name=f"{ds.PREFIX_MAP['Amazon S3']}_foo_barbazquxquux",
+    ),
+    NameTestKeys(
+        handler_type="Amazon Athena",
+        schema="foo",
+        table="barbazquxquux",
+        user_prefix="",
+        expected_name=f"{ds.PREFIX_MAP['Amazon Athena']}_foo_barbazquxquux",
+    ),
+]
+
 @pytest.mark.parametrize(
-    "handler_type,schema,table,user_prefix,expected_name", TABLE_NAME_TESTS
+    "handler_type,schema,table,user_prefix,expected_name", IMMUTA_DATASOURCE_NAME_TESTS
 )
-def test_make_table_name(
+def test_make_immuta_datasource_name(
     handler_type: str, schema: str, table: str, user_prefix: str, expected_name: str
 ):
-    name = ds.make_table_name(
+    name = ds.make_immuta_datasource_name(
         handler_type=handler_type, schema=schema, table=table, user_prefix=user_prefix
     )
-    assert name == expected_name
+    assert len(name) <= ds.MAX_IMMUTA_NAME_LIMIT
+    assert (
+            name[: ds.MAX_IMMUTA_NAME_LIMIT - 8]
+            == expected_name[: ds.MAX_IMMUTA_NAME_LIMIT - 8]
+    )
+
+@pytest.mark.parametrize(
+    "handler_type,schema,table,user_prefix,expected_name", POSTGRES_NAME_TESTS
+)
+def test_make_postgres_table_name(
+    handler_type: str, schema: str, table: str, user_prefix: str, expected_name: str
+):
+    name = ds.make_postgres_table_name(
+        handler_type=handler_type, schema=schema, table=table, user_prefix=user_prefix
+    )
+    assert len(name) <= ds.MAX_POSTGRES_NAME_LIMIT
+    assert name == expected_name[: ds.MAX_POSTGRES_NAME_LIMIT]
 
 
 MetadataTestKeys = namedtuple(
@@ -189,10 +279,10 @@ def test_to_immuta_objects(
     source, handler, schema_evolution = ds.to_immuta_objects(
         table="foo", schema="bar", config=config, columns=columns
     )
-    assert source.name == ds.make_table_name(
+    assert source.name == ds.make_immuta_datasource_name(
         table="foo", schema="bar", handler_type=handler_type, user_prefix=""
     )
-    assert source.sqlTableName == ds.make_table_name(
+    assert source.sqlTableName == ds.make_postgres_table_name(
         table="foo", schema="bar", handler_type=handler_type, user_prefix=""
     )
     assert source.blobHandlerType == handler_type
@@ -264,7 +354,7 @@ def test_make_bulk_create_objects(
 
     for table in tables:
         assert (
-            ds.make_table_name(
+            ds.make_immuta_datasource_name(
                 table=table, schema="bar", handler_type=handler_type, user_prefix=""
             )
             in table_names
