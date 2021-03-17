@@ -25,9 +25,18 @@ jobs:
         pip install -r requirements.txt
         pip install pre-commit
         pip install pytest
+        pip install pytest-cov
+
+    - name: Lint
+      run: |
+        pre-commit run --all-files
 
     - name: Test
       run: |
-        pre-commit run --all-files
-        python -m pytest ./fh_immuta_utils/tests
+        pytest --cov=./ --cov-report=xml --cov-config=./.coveragerc
+
+    - name: Upload Coverage to Codecov
+      uses: codecov/codecov-action@v1
+      with:
+        fail_ci_if_error: true
 
