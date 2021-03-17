@@ -26,6 +26,6 @@ jobs:
 
     - name: Test
       run: |
+        pre-commit run --all-files
         python -m pytest ./fh_immuta_utils/tests
 
-    
