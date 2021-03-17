@@ -1,0 +1,31 @@
+name: CI
+on: push
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7, 3.8]
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pre-commit
+        pip install pytest
+
+    - name: Test
+      run: |
+        pre-commit run --all-files
+        python -m pytest ./fh_immuta_utils/tests
+
+    
