@@ -163,8 +163,10 @@ class HandlerMetadata(BaseModel):
     staleDataTolerance: int
     # Don't know what this is. . .
     # blobId: List[str]
-    # Table name that is exposed by Immuta
+    # Table name that is exposed by the Query Engine
     bodataTableName: str = ""
+    # Schema name for the table in the Query Engine
+    bodataSchemaName: str = ""
     # The name of the Data Source to which this handler corresponds
     dataSourceName: str = ""
     columns: Optional[List[DataSourceColumn]] = None
@@ -213,6 +215,7 @@ def make_bulk_create_objects(
     schema: str,
     tables: List[str],
     user_prefix: Optional[str] = None,
+    bodata_schema_name: str = "",
 ) -> Tuple[DataSource, List[Handler], SchemaEvolutionMetadata]:
     """
     Returns a (data source, metadata) tuple containing relevant details to bulk create new data
@@ -237,6 +240,7 @@ def make_bulk_create_objects(
             schema=schema,
             config=config,
             bodataTableName=postgres_table_name,
+            bodataSchemaName=bodata_schema_name,
             dataSourceName=immuta_datasource_name,
         )
         handlers.append(handler)
@@ -255,6 +259,7 @@ def to_immuta_objects(
     table: str,
     columns: List[DataSourceColumn],
     user_prefix: Optional[str] = None,
+    bodata_schema_name: str = "",
 ) -> Tuple[DataSource, Handler, SchemaEvolutionMetadata]:
     """
     Returns a tuple containing relevant details to create a new data source
@@ -278,6 +283,7 @@ def to_immuta_objects(
         config=config,
         columns=columns,
         bodataTableName=postgres_table_name,
+        bodataSchemaName=bodata_schema_name,
         dataSourceName=immuta_datasource_name,
     )
     ds = DataSource(

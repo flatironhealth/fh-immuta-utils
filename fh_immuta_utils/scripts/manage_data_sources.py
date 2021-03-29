@@ -157,14 +157,19 @@ def data_sources_enroll_iterator(
                 continue
             LOGGER.info("Processing table: %s.%s", schema, table["tableName"])
             handler = make_handler_metadata(
-                config=config, table=table["tableName"], schema=schema
+                config=config,
+                table=table["tableName"],
+                schema=schema,
             )
             columns = client.get_column_types(
                 config=config, data_source_type=config["handler_type"], handler=handler
             )
-
             data_source, handler, schema_evolution = to_immuta_objects(
-                schema=schema, table=table["tableName"], columns=columns, config=config
+                schema=schema,
+                table=table["tableName"],
+                columns=columns,
+                config=config,
+                bodata_schema_name=schema_obj.get("query_engine_target_schema", schema),
             )
             yield data_source, handler, schema_evolution
 
@@ -190,6 +195,7 @@ def data_sources_bulk_enroll_iterator(
             tables=[table["tableName"] for table in tables],
             config=config,
             user_prefix=config.get("user_prefix"),
+            bodata_schema_name=schema_obj.get("query_engine_target_schema", schema),
         )
         yield data_source, handlers, schema_evolution
 
