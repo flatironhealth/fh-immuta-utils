@@ -218,8 +218,8 @@ def make_bulk_create_objects(
     tables: List[str],
     user_prefix: Optional[str] = None,
     bodata_schema_name: str = "",
-    prefix_names_with_schema: bool = True,
-    prefix_names_with_handler: bool = True,
+    prefix_names_with_schema: bool = False,
+    prefix_names_with_handler: bool = False,
 ) -> Tuple[DataSource, List[Handler], SchemaEvolutionMetadata]:
     """
     Returns a (data source, metadata) tuple containing relevant details to bulk create new data
