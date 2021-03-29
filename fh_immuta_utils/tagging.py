@@ -63,22 +63,22 @@ class Tagger(object):
     def get_tags_for_column(self, column_name: str) -> List[str]:
         return self.tag_map_datadict.get(column_name, [])
 
-    def get_tags_for_data_source(self, data_source: Any) -> List[Dict[str, Any]]:
+    def get_tags_for_data_source(self, name: str, handler_type: str, connection_string: str) -> List[Dict[str, Any]]:
         """
         Finds tags whose prefix key matches the prefix of the data source name.
         e.g. if prefix key is "ath_foo", all data source names with prefix "ath_foo" will get that prefix key's tags
-        :param data_source: data source object
+        :param name: the data source name
+        :param handler_type: the type of handler for this data source (e.g. Redshift, Amazon Athena, etc.)
+        :param connection_string: the remote database connection string for the data source
         :return: list of tag dicts
         """
         tags_for_data_source = []
-        handler_type = data_source["handler_type"]
-        conn_string = data_source["connection_string"]
         # remote database is not returned by the API so we strip it from the connection string
-        database = conn_string[conn_string.rfind("/")+1:]
+        database = connection_string[connection_string.rfind("/")+1:]
         tag_dict = self.tag_map_datasource.get((handler_type, database), {})
 
         for prefix, tag_list in tag_dict.items():
-            if fnmatch.fnmatch(data_source["name"], prefix):
+            if fnmatch.fnmatch(name, prefix):
                 for tag in tag_list:
                     tags_for_data_source.append({"name": tag, "source": "curated"})
         return tags_for_data_source

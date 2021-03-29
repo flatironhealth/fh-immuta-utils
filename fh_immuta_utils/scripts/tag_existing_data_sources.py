@@ -62,7 +62,11 @@ def main(config_file: str, search_text: str, dry_run: bool, debug: bool):
         progress_iterator.set_description(
             desc=f"Tagging ID: {data_source['id']}, Name: {data_source['name']} :"
         )
-        data_source_tags = tagger.get_tags_for_data_source(data_source=data_source)
+        data_source_tags = tagger.get_tags_for_data_source(
+            name=data_source['name'],
+            handler_type=data_source['handler_type'],
+            connection_string=data_source['connection_string'],
+        )
         if data_source_tags:
             logging.debug(f"Adding data source tags to {data_source['name']}.")
             if not dry_run:
