@@ -68,7 +68,7 @@ def main(config_file: str, search_text: str, dry_run: bool, debug: bool):
             connection_string=data_source['connection_string'],
         )
         if data_source_tags:
-            logging.debug(f"Adding data source tags to {data_source['name']}.")
+            logging.debug(f"\nAdding data source-level tags to {data_source['name']}.")
             if not dry_run:
                 client.tag_data_source(id=data_source["id"], tag_data=data_source_tags)
         dictionary = client.get_data_source_dictionary(id=data_source["id"])
