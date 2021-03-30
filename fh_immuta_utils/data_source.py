@@ -343,21 +343,16 @@ def make_handler_metadata(
 
 def make_schema_evolution_metadata(config: Dict[str, Any]) -> SchemaEvolutionMetadata:
     """
-    Builds metadata for the schema evolution object. Immuta table name and SQL table name template defaults match the
-    pattern defined in make_table_name()
+    Builds metadata for the schema evolution object. Immuta data source name and Query Engine table name template
+    defaults match the patterns set in the Immuta UI.
     :param config: dataset configuration dictionary
     :return: SchemaEvolutionMetadata object
     """
     user_prefix = ""
-    if config.get("prefix"):
-        user_prefix = f"{config.get('prefix')}_"
-    handler_prefix = PREFIX_MAP[config["handler_type"]]
-    datasource_name_format_default = (
-        f"{user_prefix}{handler_prefix}_<schema>_<tablename>"
-    )
-    query_engine_table_name_format_default = (
-        f"{user_prefix}{handler_prefix}_<schema>_<tablename>"
-    )
+    if config.get("user_prefix"):
+        user_prefix = f"{config.get('user_prefix')}_"
+    datasource_name_format_default = f"{user_prefix}<tablename>"
+    query_engine_table_name_format_default = f"{user_prefix}<tablename>"
     query_engine_schema_name_format_default = "<schema>"
 
     return SchemaEvolutionMetadata(
@@ -368,7 +363,8 @@ def make_schema_evolution_metadata(config: Dict[str, Any]) -> SchemaEvolutionMet
         config=SchemaEvolutionMetadataConfig(
             nameTemplate=SchemaEvolutionMetadataConfigTemplate(
                 dataSourceNameFormat=config.get("schema_evolution", {}).get(
-                    "datasource_name_format", datasource_name_format_default
+                    "datasource_name_format",
+                    datasource_name_format_default,
                 ),
                 queryEngineTableNameFormat=config.get("schema_evolution", {}).get(
                     "query_engine_table_name_format",
