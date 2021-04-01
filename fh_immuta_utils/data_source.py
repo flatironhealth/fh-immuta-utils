@@ -218,8 +218,8 @@ def make_bulk_create_objects(
     tables: List[str],
     user_prefix: Optional[str] = None,
     bodata_schema_name: str = "",
-    prefix_names_with_schema: bool = False,
-    prefix_names_with_handler: bool = False,
+    prefix_query_engine_names_with_schema: bool = False,
+    prefix_query_engine_names_with_handler: bool = False,
 ) -> Tuple[DataSource, List[Handler], SchemaEvolutionMetadata]:
     """
     Returns a (data source, metadata) tuple containing relevant details to bulk create new data
@@ -228,14 +228,14 @@ def make_bulk_create_objects(
     handlers = []
     for table in tables:
         postgres_table_name = make_postgres_table_name(
-            handler_type=config["handler_type"] if prefix_names_with_handler else "",
-            schema=schema if prefix_names_with_schema else "",
+            handler_type=config["handler_type"] if prefix_query_engine_names_with_handler else "",
+            schema=schema if prefix_query_engine_names_with_schema else "",
             table=table,
             user_prefix=user_prefix,
         )
         immuta_datasource_name = make_immuta_datasource_name(
-            handler_type=config["handler_type"] if prefix_names_with_handler else "",
-            schema=schema if prefix_names_with_schema else "",
+            handler_type=config["handler_type"],
+            schema=schema,
             table=table,
             user_prefix=user_prefix,
         )
@@ -264,22 +264,22 @@ def to_immuta_objects(
     columns: List[DataSourceColumn],
     user_prefix: Optional[str] = None,
     bodata_schema_name: str = "",
-    prefix_names_with_schema: bool = True,
-    prefix_names_with_handler: bool = True,
+    prefix_query_engine_names_with_schema: bool = True,
+    prefix_query_engine_names_with_handler: bool = True,
 ) -> Tuple[DataSource, Handler, SchemaEvolutionMetadata]:
     """
     Returns a tuple containing relevant details to create a new data source
     in Immuta from the source schema
     """
     postgres_table_name = make_postgres_table_name(
-        handler_type=config["handler_type"] if prefix_names_with_handler else "",
-        schema=schema if prefix_names_with_schema else "",
+        handler_type=config["handler_type"] if prefix_query_engine_names_with_handler else "",
+        schema=schema if prefix_query_engine_names_with_schema else "",
         table=table,
         user_prefix=user_prefix,
     )
     immuta_datasource_name = make_immuta_datasource_name(
-        handler_type=config["handler_type"] if prefix_names_with_handler else "",
-        schema=schema if prefix_names_with_schema else "",
+        handler_type=config["handler_type"],
+        schema=schema,
         table=table,
         user_prefix=user_prefix,
     )
@@ -351,7 +351,8 @@ def make_schema_evolution_metadata(config: Dict[str, Any]) -> SchemaEvolutionMet
     user_prefix = ""
     if config.get("user_prefix"):
         user_prefix = f"{config.get('user_prefix')}_"
-    datasource_name_format_default = f"{user_prefix}<tablename>"
+    handler_prefix = PREFIX_MAP[config["handler_type"]]
+    datasource_name_format_default = f"{user_prefix}{handler_prefix}_<schema>_<tablename>"
     query_engine_table_name_format_default = f"{user_prefix}<tablename>"
     query_engine_schema_name_format_default = "<schema>"
 
