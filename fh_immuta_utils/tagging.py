@@ -63,10 +63,12 @@ class Tagger(object):
     def get_tags_for_column(self, column_name: str) -> List[str]:
         return self.tag_map_datadict.get(column_name, [])
 
-    def get_tags_for_data_source(self, name: str, handler_type: str, connection_string: str) -> List[Dict[str, Any]]:
+    def get_tags_for_data_source(
+        self, name: str, handler_type: str, connection_string: str
+    ) -> List[Dict[str, Any]]:
         """
-        Finds tags whose prefix key matches the prefix of the data source name.
-        e.g. if prefix key is "ath_foo", all data source names with prefix "ath_foo" will get that prefix key's tags
+        Finds tags whose key matches a data source name using Unix shell-style wildcard matching.
+        e.g. if key is "ath_foo*", all data source names with prefix "ath_foo" will get that key's tags
         :param name: the data source name
         :param handler_type: the type of handler for this data source (e.g. Redshift, Amazon Athena, etc.)
         :param connection_string: the remote database connection string for the data source
@@ -74,7 +76,7 @@ class Tagger(object):
         """
         tags_for_data_source = []
         # remote database is not returned by the API so we strip it from the connection string
-        database = connection_string[connection_string.rfind("/")+1:]
+        database = connection_string[connection_string.rfind("/") + 1 :]
         tag_dict = self.tag_map_datasource.get((handler_type, database), {})
 
         for prefix, tag_list in tag_dict.items():
@@ -87,7 +89,10 @@ class Tagger(object):
         """
         Determines if tag is the true root by checking all available tags from config
         """
-        all_tags = {**self.tag_map_datadict, **self.tag_map_datasource}
+        tag_map_datasource_dicts: Dict[str, List[str]] = {}
+        for tag_dict in self.tag_map_datasource.values():
+            tag_map_datasource_dicts = {**tag_map_datasource_dicts, **tag_dict}
+        all_tags = {**self.tag_map_datadict, **tag_map_datasource_dicts}
         tag_list = []
         for k, v in all_tags.items():
             tag_list.append(v)

@@ -79,13 +79,13 @@ schemas_to_enroll:
 schemas_to_bulk_enroll:
   - schema_prefix: "baz"
     query_engine_target_schema: "foobar"  # Override target schema name in the Query Engine. Defaults to original schema
-    prefix_names_with_handler: true  # Prefix handler to data source and query engine table names. Defaults to false
-    prefix_names_with_schema: true  # Prefix schema name to data source and query engine table names. Defaults to false
-# Schema evolution enablement and naming templates
+    prefix_query_engine_names_with_handler: false  # Prefix handler to query engine table names. Defaults to false
+    prefix_query_engine_names_with_schema: false  # Prefix schema to query engine table names. Defaults to false
+# Schema evolution enablement and naming templates (defaults shown below)
 schema_evolution:
   disable_schema_evolution: true
   datasource_name_format: "<user_prefix>_<handler_prefix>_<schema>_<tablename>"
-  query_engine_table_name_format: "<user_prefix>_<handler_prefix>_<schema>_<tablename>"
+  query_engine_table_name_format: "<user_prefix>_<tablename>"
   query_engine_schema_name_format: "<schema>"
 credentials:
   # Read from environment variable
@@ -95,8 +95,8 @@ credentials:
 # Tags to apply directly to data sources created by this config file.
 # Keys will match on data source names using Unix shell-style wildcard matching and apply the tags
 tags:
-  pg_baz: ["tag1", "tag2.subtag2"]
-  pg_foo: ["tag3", "tag4"]
+  "pg_baz*": ["tag1", "tag2.subtag2"]
+  "pg_foo*": ["tag3", "tag4"]
 ```
 
 **Note:** For AWS Redshift, use the same format as above, replacing the `handler_type` value with `Redshift`.
@@ -123,15 +123,15 @@ schemas_to_enroll:
   - schema_prefix: foo
     table_prefix: bar
     query_engine_target_schema: "foobar"  # Override target schema name in the Query Engine. Defaults to original schema
-    prefix_names_with_handler: false  # Prefix handler to data source and query engine table names. Defaults to false
-    prefix_names_with_schema: false  # Prefix schema name to data source and query engine table names. Defaults to false
+    prefix_query_engine_names_with_handler: false  # Prefix handler to query engine table names. Defaults to false
+    prefix_query_engine_names_with_schema: false  # Prefix schema to query engine table names. Defaults to false
 # List of schemas where we want to enroll all tables in each schema
 schemas_to_bulk_enroll:
-# Schema evolution enablement and naming templates
+# Schema evolution enablement and naming templates (defaults shown below)
 schema_evolution:
   disable_schema_evolution: true
   datasource_name_format: "<user_prefix>_<handler_prefix>_<schema>_<tablename>"
-  query_engine_table_name_format: "<user_prefix>_<handler_prefix>_<schema>_<tablename>"
+  query_engine_table_name_format: "<user_prefix>_<tablename>"
   query_engine_schema_name_format: "<schema>"
 credentials:
   # Read from an instance of Hashicorp Vault
@@ -140,7 +140,7 @@ credentials:
 # Tags to apply directly to data sources created by this config file.
 # Keys will match on data source names using Unix shell-style wildcard matching and apply the tags
 tags:
-  ath_foo: ["tag1", "tag2.subtag2"]
+  "ath_foo*": ["tag1", "tag2.subtag2"]
 ```
 
 ## Data Source Column Tags

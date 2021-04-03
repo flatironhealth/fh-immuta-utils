@@ -170,8 +170,12 @@ def data_sources_enroll_iterator(
                 columns=columns,
                 config=config,
                 bodata_schema_name=schema_obj.get("query_engine_target_schema", schema),
-                prefix_query_engine_names_with_schema=schema_obj.get("prefix_query_engine_names_with_schema", False),
-                prefix_query_engine_names_with_handler=schema_obj.get("prefix_query_engine_names_with_handler", False),
+                prefix_query_engine_names_with_schema=schema_obj.get(
+                    "prefix_query_engine_names_with_schema", False
+                ),
+                prefix_query_engine_names_with_handler=schema_obj.get(
+                    "prefix_query_engine_names_with_handler", False
+                ),
             )
             yield data_source, handler, schema_evolution
 
@@ -198,8 +202,12 @@ def data_sources_bulk_enroll_iterator(
             config=config,
             user_prefix=config.get("user_prefix"),
             bodata_schema_name=schema_obj.get("query_engine_target_schema", schema),
-            prefix_query_engine_names_with_schema=schema_obj.get("prefix_query_engine_names_with_schema", False),
-            prefix_query_engine_names_with_handler=schema_obj.get("prefix_query_engine_names_with_handler", False),
+            prefix_query_engine_names_with_schema=schema_obj.get(
+                "prefix_query_engine_names_with_schema", False
+            ),
+            prefix_query_engine_names_with_handler=schema_obj.get(
+                "prefix_query_engine_names_with_handler", False
+            ),
         )
         yield data_source, handlers, schema_evolution
 

@@ -213,7 +213,11 @@ HANDLER_METADATA_TESTS = [
         db_keys={"hostname": "qux"},
         handler_type="PostgreSQL",
         expected_type=ds.PostgresHandlerMetadata,
-        kwargs={"bodataTableName": "foobar", "dataSourceName": "bazqux", "bodataSchemaName": "foo_schema"},
+        kwargs={
+            "bodataTableName": "foobar",
+            "dataSourceName": "bazqux",
+            "bodataSchemaName": "foo_schema",
+        },
     ),
 ]
 
@@ -264,7 +268,15 @@ COLUMNS = [
 
 ObjectTestKeys = namedtuple(
     "ObjectTestKeys",
-    ["db_keys", "handler_type", "expected_type", "columns", "query_engine_target_schema", "prefix_query_engine_names_with_schema", "prefix_query_engine_names_with_handler"]
+    [
+        "db_keys",
+        "handler_type",
+        "expected_type",
+        "columns",
+        "query_engine_target_schema",
+        "prefix_query_engine_names_with_schema",
+        "prefix_query_engine_names_with_handler",
+    ],
 )
 OBJECT_TESTS = [
     ObjectTestKeys(
@@ -337,7 +349,10 @@ OBJECT_TESTS = [
 ]
 
 
-@pytest.mark.parametrize("db_keys,handler_type,expected_type,columns,query_engine_target_schema,prefix_query_engine_names_with_schema,prefix_query_engine_names_with_handler", OBJECT_TESTS)
+@pytest.mark.parametrize(
+    "db_keys,handler_type,expected_type,columns,query_engine_target_schema,prefix_query_engine_names_with_schema,prefix_query_engine_names_with_handler",
+    OBJECT_TESTS,
+)
 def test_to_immuta_objects(
     db_keys: Dict[str, str],
     handler_type: str,
@@ -355,13 +370,12 @@ def test_to_immuta_objects(
     }
     config = {**base_config, **db_keys}
     config["handler_type"] = handler_type
-    bodata_schema_name = config.get("query_engine_target_schema", "")
     source, handler, schema_evolution = ds.to_immuta_objects(
         table="foo",
         schema="bar",
         config=config,
         columns=columns,
-        bodata_schema_name=bodata_schema_name,
+        bodata_schema_name=query_engine_target_schema,
         prefix_query_engine_names_with_schema=prefix_query_engine_names_with_schema,
         prefix_query_engine_names_with_handler=prefix_query_engine_names_with_handler,
     )
@@ -378,7 +392,7 @@ def test_to_immuta_objects(
         user_prefix="",
     )
     assert source.blobHandlerType == handler_type
-    assert handler.metadata.bodataSchemaName == bodata_schema_name
+    assert handler.metadata.bodataSchemaName == query_engine_target_schema
     assert isinstance(handler, ds.Handler)
     assert isinstance(handler.metadata, expected_type)
     assert isinstance(schema_evolution, ds.SchemaEvolutionMetadata)
@@ -386,7 +400,16 @@ def test_to_immuta_objects(
 
 TABLES = ["foo", "bar", "baz"]
 BulkObjectTestKeys = namedtuple(
-    "BulkObjectTestKeys", ["db_keys", "handler_type", "expected_type", "tables", "query_engine_target_schema", "prefix_query_engine_names_with_schema", "prefix_query_engine_names_with_handler"]
+    "BulkObjectTestKeys",
+    [
+        "db_keys",
+        "handler_type",
+        "expected_type",
+        "tables",
+        "query_engine_target_schema",
+        "prefix_query_engine_names_with_schema",
+        "prefix_query_engine_names_with_handler",
+    ],
 )
 BULK_OBJECT_TESTS = [
     BulkObjectTestKeys(
@@ -468,7 +491,10 @@ BULK_OBJECT_TESTS = [
 ]
 
 
-@pytest.mark.parametrize("db_keys,handler_type,expected_type,tables,query_engine_target_schema,prefix_query_engine_names_with_schema,prefix_query_engine_names_with_handler", BULK_OBJECT_TESTS)
+@pytest.mark.parametrize(
+    "db_keys,handler_type,expected_type,tables,query_engine_target_schema,prefix_query_engine_names_with_schema,prefix_query_engine_names_with_handler",
+    BULK_OBJECT_TESTS,
+)
 def test_make_bulk_create_objects(
     db_keys: Dict[str, str],
     handler_type: str,
@@ -486,13 +512,12 @@ def test_make_bulk_create_objects(
     }
     config = {**base_config, **db_keys}
     config["handler_type"] = handler_type
-    bodata_schema_name = config.get("query_engine_target_schema", "")
 
     source, handlers, schema_evolution = ds.make_bulk_create_objects(
         tables=tables,
         schema="bar",
         config=config,
-        bodata_schema_name=bodata_schema_name,
+        bodata_schema_name=query_engine_target_schema,
         prefix_query_engine_names_with_schema=prefix_query_engine_names_with_schema,
         prefix_query_engine_names_with_handler=prefix_query_engine_names_with_handler,
     )
@@ -502,7 +527,7 @@ def test_make_bulk_create_objects(
     table_names = []
     for handler in handlers:
         table_names.append(handler.metadata.bodataTableName)
-        assert handler.metadata.bodataSchemaName == bodata_schema_name
+        assert handler.metadata.bodataSchemaName == query_engine_target_schema
         assert isinstance(handler, ds.Handler)
         assert isinstance(handler.metadata, expected_type)
 
@@ -511,8 +536,10 @@ def test_make_bulk_create_objects(
             ds.make_immuta_datasource_name(
                 table=table,
                 schema="bar" if prefix_query_engine_names_with_schema else "",
-                handler_type=handler_type if prefix_query_engine_names_with_handler else "",
-                user_prefix=""
+                handler_type=handler_type
+                if prefix_query_engine_names_with_handler
+                else "",
+                user_prefix="",
             )
             in table_names
         )
