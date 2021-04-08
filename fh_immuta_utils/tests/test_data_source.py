@@ -21,20 +21,6 @@ IMMUTA_DATASOURCE_NAME_TESTS = [
         expected_name=f"{ds.PREFIX_MAP['PostgreSQL']}_foo_barbazquxquux",
     ),
     NameTestKeys(
-        handler_type="",
-        schema="foo",
-        table="barbazquxquux",
-        user_prefix="",
-        expected_name="foo_barbazquxquux",
-    ),
-    NameTestKeys(
-        handler_type="PostgreSQL",
-        schema="",
-        table="barbazquxquux",
-        user_prefix="",
-        expected_name=f"{ds.PREFIX_MAP['PostgreSQL']}_barbazquxquux",
-    ),
-    NameTestKeys(
         handler_type="PostgreSQL",
         schema="foo",
         table="barbazquxquux",
@@ -526,7 +512,7 @@ def test_make_bulk_create_objects(
 
     table_names = []
     for handler in handlers:
-        table_names.append(handler.metadata.bodataTableName)
+        table_names.append(handler.metadata.dataSourceName)
         assert handler.metadata.bodataSchemaName == query_engine_target_schema
         assert isinstance(handler, ds.Handler)
         assert isinstance(handler.metadata, expected_type)
@@ -535,10 +521,8 @@ def test_make_bulk_create_objects(
         assert (
             ds.make_immuta_datasource_name(
                 table=table,
-                schema="bar" if prefix_query_engine_names_with_schema else "",
-                handler_type=handler_type
-                if prefix_query_engine_names_with_handler
-                else "",
+                schema="bar",
+                handler_type=handler_type,
                 user_prefix="",
             )
             in table_names

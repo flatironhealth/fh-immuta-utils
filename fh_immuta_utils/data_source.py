@@ -54,11 +54,8 @@ def make_immuta_datasource_name(
     """
     table_name = ""
     table_name += f"{user_prefix}_" if user_prefix else ""
-    table_name += f"{PREFIX_MAP[handler_type]}_" if handler_type else ""
-    table_name += f"{schema}_" if schema else ""
-    table_name += f"{table}"
-    if not table_name:
-        return ""
+    table_name += f"{PREFIX_MAP[handler_type]}_{schema}_{table}"
+
     if len(table_name) <= MAX_IMMUTA_NAME_LIMIT:
         return table_name
     import hashlib
