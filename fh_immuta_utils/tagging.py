@@ -1,12 +1,15 @@
+import fnmatch
 from collections import defaultdict
 import logging
 import os
 import glob
+from functools import partial
 from typing import Any, Dict, List, Iterator, Tuple, TYPE_CHECKING
 
 import yaml
 
 from pydantic import BaseModel
+from toolz.dicttoolz import keyfilter
 
 from .data_source import DataSourceColumn
 
@@ -28,8 +31,8 @@ class Tagger(object):
         # column_name: [tag1, tag2, ...]
         self.tag_map_datadict: Dict[str, List[str]] = {}
 
-        # prefix_schema: [tag1, tag2, ...]
-        self.tag_map_datasource: Dict[str, List[str]] = {}
+        # (handler_type, database): {"prefix": [tag1, tag2, ..]}
+        self.tag_map_datasource: Dict[Tuple, Dict[str, List[str]]] = {}
 
         self.read_configs(config_root=config_root)
 
@@ -49,33 +52,47 @@ class Tagger(object):
             logging.debug("Reading enrolled data source file: %s", datasource_file)
             with open(datasource_file) as handle:
                 contents = yaml.safe_load(handle)
+                handler_type = contents.get("handler_type")
+                database = contents.get("database")
+                tag_map_entry = {(handler_type, database): contents.get("tags", {})}
                 self.tag_map_datasource = {
                     **self.tag_map_datasource,
-                    **contents.get("tags", {}),
+                    **tag_map_entry,
                 }
 
     def get_tags_for_column(self, column_name: str) -> List[str]:
         return self.tag_map_datadict.get(column_name, [])
 
-    def get_tags_for_data_source(self, name: str) -> List[Dict[str, Any]]:
+    def get_tags_for_data_source(
+        self, name: str, handler_type: str, connection_string: str
+    ) -> List[Dict[str, Any]]:
         """
-        Finds tags whose key matches the prefix of the data source name.
-        e.g. if key is "ath_foo", all data sources with prefix "ath_foo" will get that key's tags
-        :param name: data source name
+        Finds tags whose key matches a data source name using Unix shell-style wildcard matching.
+        e.g. if key is "ath_foo*", all data source names with prefix "ath_foo" will get that key's tags
+        :param name: the data source name
+        :param handler_type: the type of handler for this data source (e.g. Redshift, Amazon Athena, etc.)
+        :param connection_string: the remote database connection string for the data source
         :return: list of tag dicts
         """
-        tags = []
-        for k, v in self.tag_map_datasource.items():
-            if name.startswith(k):
-                for tag in v:
-                    tags.append({"name": tag, "source": "curated"})
-        return tags
+        tags_for_data_source = []
+        # remote database is not returned by the API so we strip it from the connection string
+        database = connection_string[connection_string.rfind("/") + 1 :]
+        tag_dict = self.tag_map_datasource.get((handler_type, database), {})
+
+        for prefix, tag_list in tag_dict.items():
+            if fnmatch.fnmatch(name, prefix):
+                for tag in tag_list:
+                    tags_for_data_source.append({"name": tag, "source": "curated"})
+        return tags_for_data_source
 
     def is_root_tag(self, tag_to_check: str) -> bool:
         """
         Determines if tag is the true root by checking all available tags from config
         """
-        all_tags = {**self.tag_map_datadict, **self.tag_map_datasource}
+        tag_map_datasource_dicts: Dict[str, List[str]] = {}
+        for tag_dict in self.tag_map_datasource.values():
+            tag_map_datasource_dicts = {**tag_map_datasource_dicts, **tag_dict}
+        all_tags = {**self.tag_map_datadict, **tag_map_datasource_dicts}
         tag_list = []
         for k, v in all_tags.items():
             tag_list.append(v)
@@ -94,12 +111,19 @@ class Tagger(object):
         """
 
         all_tags: Dict[str, List[str]] = defaultdict(list)
-        datasource_datadict_tags = {**self.tag_map_datadict, **self.tag_map_datasource}
-        for tag_list in datasource_datadict_tags.values():
+        for tag_list in self.tag_map_datadict.values():
             for tag in tag_list:
                 parent = tag.split(".")[0]
                 if tag not in all_tags[parent]:
                     all_tags[parent].append(tag)
+
+        for tag_dict in self.tag_map_datasource.values():
+            for tag_list in tag_dict.values():
+                for tag in tag_list:
+                    parent = tag.split(".")[0]
+                    if tag not in all_tags[parent]:
+                        all_tags[parent].append(tag)
+
         for root_tag, children in all_tags.items():
             if len(children) == 1 and children[0] == root_tag:
                 children = []

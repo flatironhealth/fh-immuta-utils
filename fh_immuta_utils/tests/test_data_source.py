@@ -78,6 +78,20 @@ POSTGRES_NAME_TESTS = [
         expected_name=f"{ds.PREFIX_MAP['PostgreSQL']}_foo_barbazquxquux",
     ),
     NameTestKeys(
+        handler_type="",
+        schema="foo",
+        table="barbazquxquux",
+        user_prefix="",
+        expected_name="foo_barbazquxquux",
+    ),
+    NameTestKeys(
+        handler_type="PostgreSQL",
+        schema="",
+        table="barbazquxquux",
+        user_prefix="",
+        expected_name=f"{ds.PREFIX_MAP['PostgreSQL']}_barbazquxquux",
+    ),
+    NameTestKeys(
         handler_type="PostgreSQL",
         schema="foo",
         table="barbazquxquux",
@@ -185,7 +199,11 @@ HANDLER_METADATA_TESTS = [
         db_keys={"hostname": "qux"},
         handler_type="PostgreSQL",
         expected_type=ds.PostgresHandlerMetadata,
-        kwargs={"bodataTableName": "foobar", "dataSourceName": "bazqux"},
+        kwargs={
+            "bodataTableName": "foobar",
+            "dataSourceName": "bazqux",
+            "bodataSchemaName": "foo_schema",
+        },
     ),
 ]
 
@@ -235,7 +253,16 @@ COLUMNS = [
 ]
 
 ObjectTestKeys = namedtuple(
-    "ObjectTestKeys", ["db_keys", "handler_type", "expected_type", "columns"]
+    "ObjectTestKeys",
+    [
+        "db_keys",
+        "handler_type",
+        "expected_type",
+        "columns",
+        "query_engine_target_schema",
+        "prefix_query_engine_names_with_schema",
+        "prefix_query_engine_names_with_handler",
+    ],
 )
 OBJECT_TESTS = [
     ObjectTestKeys(
@@ -243,12 +270,18 @@ OBJECT_TESTS = [
         handler_type="PostgreSQL",
         expected_type=ds.PostgresHandlerMetadata,
         columns=COLUMNS,
+        query_engine_target_schema="",
+        prefix_query_engine_names_with_schema=False,
+        prefix_query_engine_names_with_handler=False,
     ),
     ObjectTestKeys(
         db_keys={"hostname": "qux"},
         handler_type="Redshift",
         expected_type=ds.PostgresHandlerMetadata,
         columns=COLUMNS,
+        query_engine_target_schema="",
+        prefix_query_engine_names_with_schema=False,
+        prefix_query_engine_names_with_handler=False,
     ),
     ObjectTestKeys(
         db_keys={
@@ -259,16 +292,61 @@ OBJECT_TESTS = [
         handler_type="Amazon Athena",
         expected_type=ds.AthenaHandlerMetadata,
         columns=COLUMNS,
+        query_engine_target_schema="",
+        prefix_query_engine_names_with_schema=False,
+        prefix_query_engine_names_with_handler=False,
+    ),
+    ObjectTestKeys(
+        db_keys={"hostname": "qux"},
+        handler_type="PostgreSQL",
+        expected_type=ds.PostgresHandlerMetadata,
+        columns=COLUMNS,
+        query_engine_target_schema="foo_schema",
+        prefix_query_engine_names_with_schema=False,
+        prefix_query_engine_names_with_handler=False,
+    ),
+    ObjectTestKeys(
+        db_keys={"hostname": "qux"},
+        handler_type="PostgreSQL",
+        expected_type=ds.PostgresHandlerMetadata,
+        columns=COLUMNS,
+        query_engine_target_schema="",
+        prefix_query_engine_names_with_schema=True,
+        prefix_query_engine_names_with_handler=False,
+    ),
+    ObjectTestKeys(
+        db_keys={"hostname": "qux"},
+        handler_type="PostgreSQL",
+        expected_type=ds.PostgresHandlerMetadata,
+        columns=COLUMNS,
+        query_engine_target_schema="",
+        prefix_query_engine_names_with_schema=False,
+        prefix_query_engine_names_with_handler=True,
+    ),
+    ObjectTestKeys(
+        db_keys={"hostname": "qux"},
+        handler_type="PostgreSQL",
+        expected_type=ds.PostgresHandlerMetadata,
+        columns=COLUMNS,
+        query_engine_target_schema="",
+        prefix_query_engine_names_with_schema=True,
+        prefix_query_engine_names_with_handler=True,
     ),
 ]
 
 
-@pytest.mark.parametrize("db_keys,handler_type,expected_type,columns", OBJECT_TESTS)
+@pytest.mark.parametrize(
+    "db_keys,handler_type,expected_type,columns,query_engine_target_schema,prefix_query_engine_names_with_schema,prefix_query_engine_names_with_handler",
+    OBJECT_TESTS,
+)
 def test_to_immuta_objects(
     db_keys: Dict[str, str],
     handler_type: str,
     expected_type: Any,
     columns: List[ds.DataSourceColumn],
+    query_engine_target_schema: str,
+    prefix_query_engine_names_with_schema: bool,
+    prefix_query_engine_names_with_handler: bool,
 ):
     base_config = {
         "username": "foo",
@@ -279,15 +357,28 @@ def test_to_immuta_objects(
     config = {**base_config, **db_keys}
     config["handler_type"] = handler_type
     source, handler, schema_evolution = ds.to_immuta_objects(
-        table="foo", schema="bar", config=config, columns=columns
+        table="foo",
+        schema="bar",
+        config=config,
+        columns=columns,
+        bodata_schema_name=query_engine_target_schema,
+        prefix_query_engine_names_with_schema=prefix_query_engine_names_with_schema,
+        prefix_query_engine_names_with_handler=prefix_query_engine_names_with_handler,
     )
     assert source.name == ds.make_immuta_datasource_name(
-        table="foo", schema="bar", handler_type=handler_type, user_prefix=""
+        table="foo",
+        schema="bar",
+        handler_type=handler_type,
+        user_prefix="",
     )
     assert source.sqlTableName == ds.make_postgres_table_name(
-        table="foo", schema="bar", handler_type=handler_type, user_prefix=""
+        table="foo",
+        schema="bar" if prefix_query_engine_names_with_schema else "",
+        handler_type=handler_type if prefix_query_engine_names_with_handler else "",
+        user_prefix="",
     )
     assert source.blobHandlerType == handler_type
+    assert handler.metadata.bodataSchemaName == query_engine_target_schema
     assert isinstance(handler, ds.Handler)
     assert isinstance(handler.metadata, expected_type)
     assert isinstance(schema_evolution, ds.SchemaEvolutionMetadata)
@@ -295,7 +386,16 @@ def test_to_immuta_objects(
 
 TABLES = ["foo", "bar", "baz"]
 BulkObjectTestKeys = namedtuple(
-    "BulkObjectTestKeys", ["db_keys", "handler_type", "expected_type", "tables"]
+    "BulkObjectTestKeys",
+    [
+        "db_keys",
+        "handler_type",
+        "expected_type",
+        "tables",
+        "query_engine_target_schema",
+        "prefix_query_engine_names_with_schema",
+        "prefix_query_engine_names_with_handler",
+    ],
 )
 BULK_OBJECT_TESTS = [
     BulkObjectTestKeys(
@@ -303,18 +403,63 @@ BULK_OBJECT_TESTS = [
         handler_type="PostgreSQL",
         expected_type=ds.PostgresHandlerMetadata,
         tables=[],
+        query_engine_target_schema="",
+        prefix_query_engine_names_with_schema=False,
+        prefix_query_engine_names_with_handler=False,
     ),
     BulkObjectTestKeys(
         db_keys={"hostname": "qux"},
         handler_type="PostgreSQL",
         expected_type=ds.PostgresHandlerMetadata,
         tables=TABLES,
+        query_engine_target_schema="",
+        prefix_query_engine_names_with_schema=False,
+        prefix_query_engine_names_with_handler=False,
     ),
     BulkObjectTestKeys(
         db_keys={"hostname": "qux"},
         handler_type="Redshift",
         expected_type=ds.PostgresHandlerMetadata,
         tables=TABLES,
+        query_engine_target_schema="",
+        prefix_query_engine_names_with_schema=False,
+        prefix_query_engine_names_with_handler=False,
+    ),
+    BulkObjectTestKeys(
+        db_keys={"hostname": "qux"},
+        handler_type="Redshift",
+        expected_type=ds.PostgresHandlerMetadata,
+        tables=TABLES,
+        query_engine_target_schema="foo_schema",
+        prefix_query_engine_names_with_schema=False,
+        prefix_query_engine_names_with_handler=False,
+    ),
+    BulkObjectTestKeys(
+        db_keys={"hostname": "qux"},
+        handler_type="Redshift",
+        expected_type=ds.PostgresHandlerMetadata,
+        tables=TABLES,
+        query_engine_target_schema="",
+        prefix_query_engine_names_with_schema=True,
+        prefix_query_engine_names_with_handler=False,
+    ),
+    BulkObjectTestKeys(
+        db_keys={"hostname": "qux"},
+        handler_type="Redshift",
+        expected_type=ds.PostgresHandlerMetadata,
+        tables=TABLES,
+        query_engine_target_schema="",
+        prefix_query_engine_names_with_schema=False,
+        prefix_query_engine_names_with_handler=True,
+    ),
+    BulkObjectTestKeys(
+        db_keys={"hostname": "qux"},
+        handler_type="Redshift",
+        expected_type=ds.PostgresHandlerMetadata,
+        tables=TABLES,
+        query_engine_target_schema="",
+        prefix_query_engine_names_with_schema=True,
+        prefix_query_engine_names_with_handler=True,
     ),
     BulkObjectTestKeys(
         db_keys={
@@ -325,13 +470,25 @@ BULK_OBJECT_TESTS = [
         handler_type="Amazon Athena",
         expected_type=ds.AthenaHandlerMetadata,
         tables=TABLES,
+        query_engine_target_schema="",
+        prefix_query_engine_names_with_schema=False,
+        prefix_query_engine_names_with_handler=False,
     ),
 ]
 
 
-@pytest.mark.parametrize("db_keys,handler_type,expected_type,tables", BULK_OBJECT_TESTS)
+@pytest.mark.parametrize(
+    "db_keys,handler_type,expected_type,tables,query_engine_target_schema,prefix_query_engine_names_with_schema,prefix_query_engine_names_with_handler",
+    BULK_OBJECT_TESTS,
+)
 def test_make_bulk_create_objects(
-    db_keys: Dict[str, str], handler_type: str, expected_type: Any, tables: List[str]
+    db_keys: Dict[str, str],
+    handler_type: str,
+    expected_type: Any,
+    tables: List[str],
+    query_engine_target_schema: str,
+    prefix_query_engine_names_with_schema: bool,
+    prefix_query_engine_names_with_handler: bool,
 ):
     base_config = {
         "username": "foo",
@@ -343,21 +500,30 @@ def test_make_bulk_create_objects(
     config["handler_type"] = handler_type
 
     source, handlers, schema_evolution = ds.make_bulk_create_objects(
-        tables=tables, schema="bar", config=config
+        tables=tables,
+        schema="bar",
+        config=config,
+        bodata_schema_name=query_engine_target_schema,
+        prefix_query_engine_names_with_schema=prefix_query_engine_names_with_schema,
+        prefix_query_engine_names_with_handler=prefix_query_engine_names_with_handler,
     )
     assert len(handlers) == len(tables)
     assert source.blobHandlerType == handler_type
 
     table_names = []
     for handler in handlers:
-        table_names.append(handler.metadata.bodataTableName)
+        table_names.append(handler.metadata.dataSourceName)
+        assert handler.metadata.bodataSchemaName == query_engine_target_schema
         assert isinstance(handler, ds.Handler)
         assert isinstance(handler.metadata, expected_type)
 
     for table in tables:
         assert (
             ds.make_immuta_datasource_name(
-                table=table, schema="bar", handler_type=handler_type, user_prefix=""
+                table=table,
+                schema="bar",
+                handler_type=handler_type,
+                user_prefix="",
             )
             in table_names
         )
@@ -377,7 +543,7 @@ SCHEMA_EVOLUTION_METADATA_TESTS = {
             config=ds.SchemaEvolutionMetadataConfig(
                 nameTemplate={
                     "dataSourceNameFormat": "rs_<schema>_<tablename>",
-                    "queryEngineTableNameFormat": "rs_<schema>_<tablename>",
+                    "queryEngineTableNameFormat": "<tablename>",
                     "queryEngineSchemaNameFormat": "<schema>",
                 }
             ),
@@ -394,7 +560,25 @@ SCHEMA_EVOLUTION_METADATA_TESTS = {
             config=ds.SchemaEvolutionMetadataConfig(
                 nameTemplate={
                     "dataSourceNameFormat": "ath_<schema>_<tablename>",
-                    "queryEngineTableNameFormat": "ath_<schema>_<tablename>",
+                    "queryEngineTableNameFormat": "<tablename>",
+                    "queryEngineSchemaNameFormat": "<schema>",
+                }
+            ),
+        ),
+    ),
+    "schema_evolution_no_config_add_user_prefix": (
+        {
+            "owner_profile_id": 0,
+            "handler_type": "Amazon Athena",
+            "user_prefix": "foobar",
+        },
+        ds.SchemaEvolutionMetadata(
+            ownerProfileId=0,
+            disabled=True,
+            config=ds.SchemaEvolutionMetadataConfig(
+                nameTemplate={
+                    "dataSourceNameFormat": "foobar_ath_<schema>_<tablename>",
+                    "queryEngineTableNameFormat": "foobar_<tablename>",
                     "queryEngineSchemaNameFormat": "<schema>",
                 }
             ),

@@ -41,7 +41,7 @@ Note the following:
 
 * Enabling or disabling schema evolution requires a schema value is present in the `schemas_to_bulk_enroll` key in the
   configuration. **When enabling schema evolution for the first time for a remote database**, a bulk enroll of a
-  non-enrolled schema must be run to correctly create the schema evolution record in Immuta
+  non-enrolled schema must be run to correctly create the schema evolution record in Immuta.
 * Data sources enrolled with schema evolution automatically have table evolution enabled. See the internal Immuta
   documentation page titled "Schema Monitoring" for more information on table evolution.
 * Schemas and tables are enrolled with the currently authenticated user running `fh-immuta-utils` as the owner
@@ -66,7 +66,7 @@ An example of a state file for a PostgreSQL database is as follows:
 hostname: my-database.foo.com
 port: 5439
 database: db-name
-# Prefix to prepend to name of data source created in Immuta
+# Prefix to add to data source names and query engine table names created in Immuta
 user_prefix:
 handler_type: PostgreSQL
 # List of schemas to enroll where for each schema,
@@ -78,11 +78,14 @@ schemas_to_enroll:
 # List of schemas where we want to enroll all tables in each schema
 schemas_to_bulk_enroll:
   - schema_prefix: "baz"
-# Schema evolution enablement and naming templates
+    query_engine_target_schema: "foobar"  # Override target schema name in the Query Engine. Defaults to original schema
+    prefix_query_engine_names_with_handler: false  # Prefix handler to query engine table names. Defaults to false
+    prefix_query_engine_names_with_schema: false  # Prefix schema to query engine table names. Defaults to false
+# Schema evolution enablement and naming templates (defaults shown below)
 schema_evolution:
   disable_schema_evolution: true
   datasource_name_format: "<user_prefix>_<handler_prefix>_<schema>_<tablename>"
-  query_engine_table_name_format: "<user_prefix>_<handler_prefix>_<schema>_<tablename>"
+  query_engine_table_name_format: "<user_prefix>_<tablename>"
   query_engine_schema_name_format: "<schema>"
 credentials:
   # Read from environment variable
@@ -90,10 +93,10 @@ credentials:
   key: USER_PASSWORD
   username: service_user
 # Tags to apply directly to data sources created by this config file.
-# Key follows the pattern <prefix>_<schema>, where prefix matches with PREFIX_MAP in data_source.py
+# Keys will match on data source names using Unix shell-style wildcard matching and apply the tags
 tags:
-  pg_baz: ["tag1", "tag2.subtag2"]
-  pg_foo: ["tag3", "tag4"]
+  "pg_baz*": ["tag1", "tag2.subtag2"]
+  "pg_foo*": ["tag3", "tag4"]
 ```
 
 **Note:** For AWS Redshift, use the same format as above, replacing the `handler_type` value with `Redshift`.
@@ -108,7 +111,7 @@ An example of a state file for an AWS Athena database is as follows:
 region: us-east-1
 hostname: us-east-1
 database: my-database
-# Prefix to prepend to name of data source created in Immuta
+# Prefix to add to data source names and query engine table names created in Immuta
 user_prefix:
 handler_type: Amazon Athena
 queryResultLocationBucket: bucket-where-results-should-be-stored
@@ -119,22 +122,25 @@ schemas_to_enroll:
   # Will glob in database for all schemas starting with this prefix.
   - schema_prefix: foo
     table_prefix: bar
+    query_engine_target_schema: "foobar"  # Override target schema name in the Query Engine. Defaults to original schema
+    prefix_query_engine_names_with_handler: false  # Prefix handler to query engine table names. Defaults to false
+    prefix_query_engine_names_with_schema: false  # Prefix schema to query engine table names. Defaults to false
 # List of schemas where we want to enroll all tables in each schema
 schemas_to_bulk_enroll:
-# Schema evolution enablement and naming templates
+# Schema evolution enablement and naming templates (defaults shown below)
 schema_evolution:
   disable_schema_evolution: true
   datasource_name_format: "<user_prefix>_<handler_prefix>_<schema>_<tablename>"
-  query_engine_table_name_format: "<user_prefix>_<handler_prefix>_<schema>_<tablename>"
+  query_engine_table_name_format: "<user_prefix>_<tablename>"
   query_engine_schema_name_format: "<schema>"
 credentials:
   # Read from an instance of Hashicorp Vault
   source: VAULT
   key: path/to/vault/secret
 # Tags to apply directly to data sources created by this config file.
-# Key follows the pattern <prefix>_<schema>, where prefix matches with PREFIX_MAP in data_source.py
+# Keys will match on data source names using Unix shell-style wildcard matching and apply the tags
 tags:
-  ath_foo: ["tag1", "tag2.subtag2"]
+  "ath_foo*": ["tag1", "tag2.subtag2"]
 ```
 
 ## Data Source Column Tags

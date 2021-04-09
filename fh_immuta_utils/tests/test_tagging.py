@@ -7,7 +7,12 @@ import fh_immuta_utils.tagging as tg
 import fh_immuta_utils.data_source as ds
 
 TAG_MAP = {"col_foo": ["foo", "foobar"], "col_bar": ["bar.baz"]}
-DATA_SOURCE_TAGS = {"ath_succeed": ["eeny", "meeny.miny"], "rs_fail": ["moe"]}
+DATA_SOURCE_TAGS = {
+    ("handler_foo", "database_foo"): {
+        "ath_match*": ["eeny", "meeny.miny"],
+        "rs_fail*": ["moe"],
+    }
+}
 
 
 @pytest.fixture
@@ -47,8 +52,31 @@ def test_get_tags_for_data_source(tagger):
         {"name": "eeny", "source": "curated"},
         {"name": "meeny.miny", "source": "curated"},
     ]
-    assert tagger.get_tags_for_data_source(name="ath_succeed_foo") == expected
-    assert tagger.get_tags_for_data_source(name="ath_fail_bar") == []
+
+    assert (
+        tagger.get_tags_for_data_source(
+            name="ath_match_succeeds",
+            handler_type="handler_foo",
+            connection_string="fake.connection.string:5439/database_foo",
+        )
+        == expected
+    )
+    assert (
+        tagger.get_tags_for_data_source(
+            name="ath_fail_match",
+            handler_type="handler_foo",
+            connection_string="fake.connection.string:5439/database_foo",
+        )
+        == []
+    )
+    assert (
+        tagger.get_tags_for_data_source(
+            name="rs_fail_bar",
+            handler_type="handler_fail_match",
+            connection_string="fake.connection.string:5439/database_fail_match",
+        )
+        == []
+    )
 
 
 TagMsgBody = namedtuple("TagMsgBody", ["root_tag", "children", "expected"])

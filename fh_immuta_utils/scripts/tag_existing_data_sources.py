@@ -53,7 +53,12 @@ def main(config_file: str, search_text: str, dry_run: bool, debug: bool):
     with Paginator(client.get_data_source_list, search_text=search_text) as paginator:
         for data_source in paginator:
             data_sources_to_tag.append(
-                {"id": data_source["id"], "name": data_source["name"]}
+                {
+                    "id": data_source["id"],
+                    "name": data_source["name"],
+                    "handler_type": data_source["blobHandlerType"],
+                    "connection_string": data_source["connectionString"],
+                }
             )
 
     progress_iterator = tqdm(data_sources_to_tag)
@@ -61,9 +66,13 @@ def main(config_file: str, search_text: str, dry_run: bool, debug: bool):
         progress_iterator.set_description(
             desc=f"Tagging ID: {data_source['id']}, Name: {data_source['name']} :"
         )
-        data_source_tags = tagger.get_tags_for_data_source(name=data_source["name"])
+        data_source_tags = tagger.get_tags_for_data_source(
+            name=data_source["name"],
+            handler_type=data_source["handler_type"],
+            connection_string=data_source["connection_string"],
+        )
         if data_source_tags:
-            logging.debug(f"Adding data source tags to {data_source['name']}.")
+            logging.debug(f"\nAdding data source-level tags to {data_source['name']}.")
             if not dry_run:
                 client.tag_data_source(id=data_source["id"], tag_data=data_source_tags)
         dictionary = client.get_data_source_dictionary(id=data_source["id"])
