@@ -11,7 +11,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name=NAME,
-    version="0.4.0",
+    version="0.5.0",
     entry_points={
         "console_scripts": ["fh-immuta-utils = fh_immuta_utils.scripts.cli:main_cli"]
     },
