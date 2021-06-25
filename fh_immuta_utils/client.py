@@ -103,6 +103,10 @@ class ImmutaClient(LoggingMixin):
             return cls.make_generic_odbc_request_headers(config)
         if config["handler_type"] == "Amazon Athena":
             return cls.make_athena_glob_request_headers(config)
+        if config["handler_type"] == "Snowflake":
+            headers = cls.make_generic_odbc_request_headers(config)
+            headers["sql-warehouse"] = config["warehouse"]
+            return headers
         raise TypeError
 
     @classmethod

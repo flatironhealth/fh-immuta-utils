@@ -30,6 +30,7 @@ HANDLER_TYPES = {
     "Presto": "presto",
     "Amazon Athena": "athena",
     "Vertica": "vertica",
+    "Snowflake": "snowflake",
 }
 
 PREFIX_MAP = {
@@ -37,6 +38,7 @@ PREFIX_MAP = {
     "Redshift": "rs",
     "Amazon S3": "s3",
     "Amazon Athena": "ath",
+    "Snowflake": "sf",
 }
 MAX_IMMUTA_NAME_LIMIT = 255
 MAX_POSTGRES_NAME_LIMIT = 255
@@ -55,6 +57,7 @@ def make_immuta_datasource_name(
     table_name = ""
     table_name += f"{user_prefix}_" if user_prefix else ""
     table_name += f"{PREFIX_MAP[handler_type]}_{schema}_{table}"
+    table_name = table_name.lower()
 
     if len(table_name) <= MAX_IMMUTA_NAME_LIMIT:
         return table_name
@@ -77,6 +80,7 @@ def make_postgres_table_name(
     table_name += f"{PREFIX_MAP[handler_type]}_" if handler_type else ""
     table_name += f"{schema}_" if schema else ""
     table_name += f"{table}"
+    table_name = table_name.lower()
     if len(table_name) < MAX_POSTGRES_NAME_LIMIT:
         return table_name
     trunc_table_name = table_name[:MAX_POSTGRES_NAME_LIMIT]
@@ -187,6 +191,13 @@ class AthenaHandlerMetadata(HandlerMetadata):
 class PostgresHandlerMetadata(HandlerMetadata):
     hostname: str
     port: int = 5432
+
+
+class SnowflakeHandlerMetadata(HandlerMetadata):
+    hostname: str
+    warehouse: str
+    secureNativeView: bool = False
+    port: int = 443
 
 
 class Handler(BaseModel):
@@ -323,6 +334,8 @@ def make_handler_metadata(
     }
     for k, v in required_args.items():
         config[k] = config.get(k, v)
+    if 'bodataSchemaName' in kwargs:
+        kwargs['bodataSchemaName'] = kwargs['bodataSchemaName'].lower()
     if config["handler_type"] == "Amazon Athena":
         metadata = AthenaHandlerMetadata(
             # Default value but has to exist in the final used dict
@@ -334,6 +347,12 @@ def make_handler_metadata(
     elif config["handler_type"] in ["PostgreSQL", "Redshift"]:
         metadata = PostgresHandlerMetadata(
             # Default value but has to exist in the final used dict
+            **kwargs,
+            **locals(),
+            **config,
+        )
+    elif config["handler_type"] == "Snowflake":
+        metadata = SnowflakeHandlerMetadata(
             **kwargs,
             **locals(),
             **config,
