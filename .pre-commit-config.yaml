@@ -13,9 +13,10 @@ repos:
           versioneer.py
         )$
 - repo: https://github.com/pre-commit/mirrors-mypy
-  rev: master
+  rev: v0.910
   hooks:
     - id: mypy
+      args: [--no-strict-optional, --ignore-missing-imports]
       exclude : >
         (?x)^(
           immuta_utils/_version.py|
