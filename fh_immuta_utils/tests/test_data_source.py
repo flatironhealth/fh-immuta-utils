@@ -66,6 +66,13 @@ IMMUTA_DATASOURCE_NAME_TESTS = [
         user_prefix="",
         expected_name=f"{ds.PREFIX_MAP['Amazon Athena']}_foo_barbazquxquux",
     ),
+    NameTestKeys(
+        handler_type="Snowflake",
+        schema="foo",
+        table="barbazquxquux",
+        user_prefix="",
+        expected_name=f"{ds.PREFIX_MAP['Snowflake']}_foo_barbazquxquux",
+    ),
 ]
 
 
@@ -137,6 +144,13 @@ POSTGRES_NAME_TESTS = [
         user_prefix="",
         expected_name=f"{ds.PREFIX_MAP['Amazon Athena']}_foo_barbazquxquux",
     ),
+    NameTestKeys(
+        handler_type="Snowflake",
+        schema="foo",
+        table="barbazquxquux",
+        user_prefix="",
+        expected_name=f"{ds.PREFIX_MAP['Snowflake']}_foo_barbazquxquux",
+    ),
 ]
 
 
@@ -183,6 +197,12 @@ HANDLER_METADATA_TESTS = [
         db_keys={"hostname": "qux"},
         handler_type="Redshift",
         expected_type=ds.PostgresHandlerMetadata,
+        kwargs={},
+    ),
+    MetadataTestKeys(
+        db_keys={"hostname": "qux", "warehouse": "IMMUTA_WH"},
+        handler_type="Snowflake",
+        expected_type=ds.SnowflakeHandlerMetadata,
         kwargs={},
     ),
     MetadataTestKeys(
@@ -291,6 +311,15 @@ OBJECT_TESTS = [
         },
         handler_type="Amazon Athena",
         expected_type=ds.AthenaHandlerMetadata,
+        columns=COLUMNS,
+        query_engine_target_schema="",
+        prefix_query_engine_names_with_schema=False,
+        prefix_query_engine_names_with_handler=False,
+    ),
+    ObjectTestKeys(
+        db_keys={"hostname": "qux", "warehouse": "IMMUTA_WH"},
+        handler_type="Snowflake",
+        expected_type=ds.SnowflakeHandlerMetadata,
         columns=COLUMNS,
         query_engine_target_schema="",
         prefix_query_engine_names_with_schema=False,
@@ -469,6 +498,15 @@ BULK_OBJECT_TESTS = [
         },
         handler_type="Amazon Athena",
         expected_type=ds.AthenaHandlerMetadata,
+        tables=TABLES,
+        query_engine_target_schema="",
+        prefix_query_engine_names_with_schema=False,
+        prefix_query_engine_names_with_handler=False,
+    ),
+    BulkObjectTestKeys(
+        db_keys={"hostname": "qux", "warehouse": "IMMUTA_WH"},
+        handler_type="Snowflake",
+        expected_type=ds.SnowflakeHandlerMetadata,
         tables=TABLES,
         query_engine_target_schema="",
         prefix_query_engine_names_with_schema=False,
