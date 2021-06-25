@@ -10,7 +10,7 @@ REQUIRED_KEYS = ["base_url", "config_root", "auth_config"]
 
 
 def parse_config(config_file: str) -> Dict[str, Any]:
-    """ Validates the given config file and returns as dict """
+    """Validates the given config file and returns as dict"""
     with open(config_file) as handle:
         config = yaml.safe_load(handle)
     for key in REQUIRED_KEYS:

@@ -25,7 +25,7 @@ class Tag(BaseModel):
 
 
 class Tagger(object):
-    """ Wrapper around managing tags. """
+    """Wrapper around managing tags."""
 
     def __init__(self, config_root: str) -> None:
         # column_name: [tag1, tag2, ...]

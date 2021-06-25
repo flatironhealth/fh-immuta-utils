@@ -4,7 +4,7 @@ repos:
   hooks:
     - id: trailing-whitespace
 - repo: https://github.com/python/black
-  rev: master
+  rev: 21.6b0
   hooks:
     - id: black
       exclude : >
