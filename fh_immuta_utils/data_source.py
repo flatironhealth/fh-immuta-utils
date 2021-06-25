@@ -334,8 +334,8 @@ def make_handler_metadata(
     }
     for k, v in required_args.items():
         config[k] = config.get(k, v)
-    if 'bodataSchemaName' in kwargs:
-        kwargs['bodataSchemaName'] = kwargs['bodataSchemaName'].lower()
+    if "bodataSchemaName" in kwargs:
+        kwargs["bodataSchemaName"] = kwargs["bodataSchemaName"].lower()
     if config["handler_type"] == "Amazon Athena":
         metadata = AthenaHandlerMetadata(
             # Default value but has to exist in the final used dict
