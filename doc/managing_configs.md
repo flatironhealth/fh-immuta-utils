@@ -99,7 +99,16 @@ tags:
   "pg_foo*": ["tag3", "tag4"]
 ```
 
-**Note:** For AWS Redshift, use the same format as above, replacing the `handler_type` value with `Redshift`.
+#### AWS Redshift
+
+Use the same format as PostgreSQL, replacing the `handler_type` value with `Redshift`.
+
+#### Snowflake
+
+Use the same format as PostgreSQL, replacing the `handler_type` value with `Snowflake`. Additional parameters include:
+
+1. `warehouse`: Required. Specifies the Snowflake warehouse to use when interacting with the Immuta database in Snowflake
+2. `secureNativeView`: Defaults to `false`. Enables or disables secure views for all enrolled Snowflake data sources.
 
 #### AWS Athena
 

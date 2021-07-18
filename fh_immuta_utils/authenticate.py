@@ -194,7 +194,7 @@ def build_auth_scheme(**kwargs):
 
 
 def retrieve_credentials_from_vault(credentials_dict: Dict[str, Any]) -> Dict[str, str]:
-    """ Expects that you're logged into Hashicorp Vault. """
+    """Expects that you're logged into Hashicorp Vault."""
     import hvac
 
     client = hvac.Client()
@@ -210,7 +210,7 @@ def retrieve_credentials_from_vault(credentials_dict: Dict[str, Any]) -> Dict[st
 def retrieve_credentials_from_environment(
     credentials_dict: Dict[str, Any]
 ) -> Dict[str, str]:
-    """ Will throw if env var is unset. """
+    """Will throw if env var is unset."""
     try:
         credentials_dict["value"] = os.environ[credentials_dict["key"]]
     except KeyError:
