@@ -174,7 +174,7 @@ class Tagger(object):
             # We don't know what other possible values exist for source, but all our currently made tags
             # are curated.
             column.tags = [
-                {"name": tag, "source": "curated"}
+                {"name": tag, "source": "curated", "deleted": "False"}
                 for tag in self.get_tags_for_column(column_name=column.name)
             ]
             enriched_columns.append(column)
