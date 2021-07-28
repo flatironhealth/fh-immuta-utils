@@ -153,6 +153,7 @@ class DataSourceColumn(BaseModel):
     dataType: str
     remoteType: str
     nullable: bool
+    remoteColumn: str = ""
     tags: List[Dict[str, str]] = []
 
 
