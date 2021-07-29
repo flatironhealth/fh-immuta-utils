@@ -17,6 +17,10 @@ LOGGER = logging.getLogger(__name__)
     help="Delete the data sources that contains this string in their name",
 )
 @click.option(
+    "--search-schema",
+    help="Delete the data sources that match this schema",
+)
+@click.option(
     "--hard-delete",
     is_flag=True,
     default=False,
@@ -30,7 +34,7 @@ LOGGER = logging.getLogger(__name__)
 )
 @click.option("--debug", is_flag=True, default=False, help="Debug logging")
 def main(
-    config_file: str, search_text: str, hard_delete: bool, dry_run: bool, debug: bool
+    config_file: str, search_text: str, search_schema: str, hard_delete: bool, dry_run: bool, debug: bool
 ):
     logging.basicConfig(
         format="[%(name)s][%(levelname)s][%(asctime)s] %(message)s",
@@ -42,7 +46,7 @@ def main(
 
     logging.info("Gathering data-stores to delete")
     data_sources_to_delete = []
-    with Paginator(client.get_data_source_list, search_text=search_text) as paginator:
+    with Paginator(client.get_data_source_list, search_text=search_text, search_schema=search_schema) as paginator:
         for data_source in paginator:
             data_sources_to_delete.append(
                 {"id": data_source["id"], "name": data_source["name"]}

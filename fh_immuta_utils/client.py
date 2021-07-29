@@ -136,6 +136,7 @@ class ImmutaClient(LoggingMixin):
     def make_get_request_params(
         cls,
         search_text: Optional[str] = None,
+        search_schema: Optional[str] = None,
         public_only: Optional[bool] = None,
         name_only: Optional[bool] = False,
         mode: Optional[int] = 0,
@@ -144,6 +145,7 @@ class ImmutaClient(LoggingMixin):
     ) -> Dict[str, Any]:
         params = {
             "searchText": search_text,
+            "schema": search_schema,
             "publicOnly": public_only,
             "nameOnly": name_only,
             "mode": mode,
@@ -375,6 +377,7 @@ class ImmutaClient(LoggingMixin):
     def get_data_source_list(
         self,
         search_text=None,
+        search_schema=None,
         public_only=None,
         name_only=False,
         mode=0,
@@ -383,6 +386,7 @@ class ImmutaClient(LoggingMixin):
     ):
         params = self.make_get_request_params(
             search_text=search_text,
+            search_schema=search_schema,
             public_only=public_only,
             name_only=name_only,
             mode=mode,
