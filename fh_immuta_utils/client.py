@@ -500,13 +500,14 @@ class ImmutaClient(LoggingMixin):
             if not id and name:
                 id = self.get_data_source_by_name(name=name)["id"]
 
-            # To completely remove a data source, we need to disabled it first,
+            # To completely remove a data source, we need to disable it first,
             # but Immuta uses the same endpoint for both actions,
             # Due to this reason, we run `self.delete()` twice
             # unless the data source was already disabled
             result = self.delete(f"dataSource/{id}")
+            result_json = result.json()
 
-            if not result.json()["hardDelete"]:
+            if ("hardDelete" not in result_json) or ("hardDelete" in result_json and not result_json["hardDelete"]):
                 # if the data source was only disabled, delete it again
                 self.delete(f"dataSource/{id}")
         except HTTPError as e:
