@@ -218,6 +218,7 @@ HANDLER_TO_METADATA_CLASS = {
     "PostgreSQL": PostgresHandlerMetadata,
     "Amazon Athena": AthenaHandlerMetadata,
     "Redshift": PostgresHandlerMetadata,
+    "Snowflake": SnowflakeHandlerMetadata,
 }
 
 

@@ -538,7 +538,7 @@ class ImmutaClient(LoggingMixin):
         """
         request_prefix = blob_handler_type(dataset_spec["handler_type"])
         remote_database = dataset_spec["database"]
-        headers = self.make_generic_odbc_request_headers(dataset_spec)
+        headers = self.make_glob_request_headers(dataset_spec)
         path = f"{request_prefix}/database/{remote_database}/test"
         res = self._session.get(path, headers=headers)
         return res
