@@ -33,13 +33,21 @@ from fh_immuta_utils.tagging import Tagger
     help="Log the data stores that would be updated without affecting any change",
 )
 @click.option("--debug", is_flag=True, default=False, help="Debug logging")
-def cli_entrypoint(config_file: str, search_text: str, search_schema: str, dry_run: bool, debug: bool):
+def cli_entrypoint(
+    config_file: str, search_text: str, search_schema: str, dry_run: bool, debug: bool
+):
     return main(
-        config_file=config_file, search_text=search_text, search_schema=search_schema, dry_run=dry_run, debug=debug
+        config_file=config_file,
+        search_text=search_text,
+        search_schema=search_schema,
+        dry_run=dry_run,
+        debug=debug,
     )
 
 
-def main(config_file: str, search_text: str, search_schema: str,  dry_run: bool, debug: bool):
+def main(
+    config_file: str, search_text: str, search_schema: str, dry_run: bool, debug: bool
+):
     logging.basicConfig(
         format="[%(name)s][%(levelname)s][%(asctime)s] %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
@@ -54,7 +62,11 @@ def main(config_file: str, search_text: str, search_schema: str,  dry_run: bool,
 
     logging.info("Gathering data sources to tag")
     data_sources_to_tag = []
-    with Paginator(client.get_data_source_list, search_text=search_text, search_schema=search_schema) as paginator:
+    with Paginator(
+        client.get_data_source_list,
+        search_text=search_text,
+        search_schema=search_schema,
+    ) as paginator:
         for data_source in paginator:
             data_sources_to_tag.append(
                 {

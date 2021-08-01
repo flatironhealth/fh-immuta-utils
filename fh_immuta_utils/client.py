@@ -507,7 +507,9 @@ class ImmutaClient(LoggingMixin):
             result = self.delete(f"dataSource/{id}")
             result_json = result.json()
 
-            if ("hardDelete" not in result_json) or ("hardDelete" in result_json and not result_json["hardDelete"]):
+            if ("hardDelete" not in result_json) or (
+                "hardDelete" in result_json and not result_json["hardDelete"]
+            ):
                 # if the data source was only disabled, delete it again
                 self.delete(f"dataSource/{id}")
         except HTTPError as e:
