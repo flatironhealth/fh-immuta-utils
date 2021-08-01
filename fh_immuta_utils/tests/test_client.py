@@ -1,6 +1,8 @@
-from unittest.mock import patch
+from contextlib import nullcontext as does_not_raise
+from unittest.mock import patch, MagicMock
 
 import pytest
+import requests
 
 from fh_immuta_utils.client import ImmutaClient
 
@@ -69,3 +71,12 @@ MAKE_GLOB_REQUEST_HEADERS_TESTS = {
 def test_skip_dataset_enrollment(mock_session, config, expected):
     client = ImmutaClient(session=mock_session)
     assert client.make_glob_request_headers(config) == expected
+
+
+@patch("fh_immuta_utils.client.ImmutaSession")
+def test_delete_data_source_no_id_no_name(mock_session):
+    client = ImmutaClient(session=mock_session)
+    id = None
+    name = None
+    with pytest.raises(Exception):
+        client.delete_data_source(id=id, name=name)
