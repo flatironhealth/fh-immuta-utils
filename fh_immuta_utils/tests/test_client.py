@@ -1,8 +1,8 @@
-from contextlib import nullcontext as does_not_raise
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, Mock
 
 import pytest
 import requests
+from requests import Response
 
 from fh_immuta_utils.client import ImmutaClient
 
@@ -80,3 +80,16 @@ def test_delete_data_source_no_id_no_name(mock_session):
     name = None
     with pytest.raises(Exception):
         client.delete_data_source(id=id, name=name)
+
+
+@patch("fh_immuta_utils.client.ImmutaSession")
+def test_delete_data_source_already_disabled(mock_session):
+    client = ImmutaClient(session=mock_session)
+    id = 1
+    name = None
+    client.delete = Mock()
+    resp = Mock(spec=Response)
+    resp.json.return_value = {"hardDelete": True}
+    client.delete.return_value = resp
+    client.delete_data_source(id=id, name=name)
+    client.delete.assert_called_once()
