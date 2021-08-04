@@ -1,7 +1,6 @@
 from unittest.mock import patch, Mock
 
 import pytest
-import requests
 from requests import Response
 
 from fh_immuta_utils.client import ImmutaClient
@@ -93,3 +92,73 @@ def test_delete_data_source_already_disabled(mock_session):
     client.delete.return_value = resp
     client.delete_data_source(id=id, name=name)
     client.delete.assert_called_once()
+
+
+GET_REMOTE_DATABASE_TEST_RESPONSE_TESTS = {
+    "make_glob_request_headers_postgresql": (
+        {
+            "handler_type": "PostgreSQL",
+            "database": "foobar",
+            "hostname": "psql.foobar.io",
+            "port": 443,
+            "username": "foo",
+            "password": "bar",
+        },
+        {
+            "make_generic_odbc_request_headers": True,
+            "make_athena_glob_request_headers": False,
+        },
+    ),
+    "make_glob_request_headers_athena": (
+        {
+            "handler_type": "Amazon Athena",
+            "database": "foobar",
+            "region": "us-east-1",
+            "queryResultLocationBucket": "s3_location",
+            "username": "foo",
+            "password": "bar",
+        },
+        {
+            "make_generic_odbc_request_headers": False,
+            "make_athena_glob_request_headers": True,
+        },
+    ),
+    "make_glob_request_headers_snowflake": (
+        {
+            "handler_type": "Snowflake",
+            "hostname": "psql.foobar.io",
+            "database": "foobar",
+            "port": 443,
+            "username": "foo",
+            "password": "bar",
+            "warehouse": "IMMUTA_WH",
+        },
+        {
+            "make_generic_odbc_request_headers": True,
+            "make_athena_glob_request_headers": False,
+        },
+    ),
+}
+
+
+@pytest.mark.parametrize(
+    "config, expected",
+    list(GET_REMOTE_DATABASE_TEST_RESPONSE_TESTS.values()),
+    ids=list(GET_REMOTE_DATABASE_TEST_RESPONSE_TESTS.keys()),
+)
+@patch("fh_immuta_utils.client.ImmutaSession")
+@patch("fh_immuta_utils.client.ImmutaClient.make_generic_odbc_request_headers")
+@patch("fh_immuta_utils.client.ImmutaClient.make_athena_glob_request_headers")
+def test_get_remote_database_test_response(
+    mock_make_athena_glob_request_headers,
+    mock_make_generic_odbc_request_headers,
+    mock_session,
+    config,
+    expected,
+):
+    client = ImmutaClient(session=mock_session)
+    client.get_remote_database_test_response(config)
+    if expected["make_generic_odbc_request_headers"]:
+        mock_make_generic_odbc_request_headers.assert_called()
+    if expected["make_athena_glob_request_headers"]:
+        mock_make_athena_glob_request_headers.assert_called()
