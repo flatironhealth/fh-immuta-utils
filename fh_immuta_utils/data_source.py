@@ -153,6 +153,7 @@ class DataSourceColumn(BaseModel):
     dataType: str
     remoteType: str
     nullable: bool
+    remoteColumn: str = ""
     tags: List[Dict[str, str]] = []
 
 
@@ -217,6 +218,7 @@ HANDLER_TO_METADATA_CLASS = {
     "PostgreSQL": PostgresHandlerMetadata,
     "Amazon Athena": AthenaHandlerMetadata,
     "Redshift": PostgresHandlerMetadata,
+    "Snowflake": SnowflakeHandlerMetadata,
 }
 
 

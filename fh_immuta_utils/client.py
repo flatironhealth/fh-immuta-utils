@@ -136,6 +136,7 @@ class ImmutaClient(LoggingMixin):
     def make_get_request_params(
         cls,
         search_text: Optional[str] = None,
+        search_schema: Optional[str] = None,
         public_only: Optional[bool] = None,
         name_only: Optional[bool] = False,
         mode: Optional[int] = 0,
@@ -144,6 +145,7 @@ class ImmutaClient(LoggingMixin):
     ) -> Dict[str, Any]:
         params = {
             "searchText": search_text,
+            "schema": search_schema,
             "publicOnly": public_only,
             "nameOnly": name_only,
             "mode": mode,
@@ -375,6 +377,7 @@ class ImmutaClient(LoggingMixin):
     def get_data_source_list(
         self,
         search_text=None,
+        search_schema=None,
         public_only=None,
         name_only=False,
         mode=0,
@@ -383,6 +386,7 @@ class ImmutaClient(LoggingMixin):
     ):
         params = self.make_get_request_params(
             search_text=search_text,
+            search_schema=search_schema,
             public_only=public_only,
             name_only=name_only,
             mode=mode,
@@ -496,13 +500,16 @@ class ImmutaClient(LoggingMixin):
             if not id and name:
                 id = self.get_data_source_by_name(name=name)["id"]
 
-            # To completely remove a data source, we need to disabled it first,
+            # To completely remove a data source, we need to disable it first,
             # but Immuta uses the same endpoint for both actions,
             # Due to this reason, we run `self.delete()` twice
             # unless the data source was already disabled
             result = self.delete(f"dataSource/{id}")
+            result_json = result.json()
 
-            if not result.json()["hardDelete"]:
+            if ("hardDelete" not in result_json) or (
+                "hardDelete" in result_json and not result_json["hardDelete"]
+            ):
                 # if the data source was only disabled, delete it again
                 self.delete(f"dataSource/{id}")
         except HTTPError as e:
@@ -538,7 +545,7 @@ class ImmutaClient(LoggingMixin):
         """
         request_prefix = blob_handler_type(dataset_spec["handler_type"])
         remote_database = dataset_spec["database"]
-        headers = self.make_generic_odbc_request_headers(dataset_spec)
+        headers = self.make_glob_request_headers(dataset_spec)
         path = f"{request_prefix}/database/{remote_database}/test"
         res = self._session.get(path, headers=headers)
         return res
