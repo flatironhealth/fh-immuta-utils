@@ -137,6 +137,7 @@ class ImmutaClient(LoggingMixin):
         cls,
         search_text: Optional[str] = None,
         search_schema: Optional[str] = None,
+        columns: Optional[List[str]] = None,
         public_only: Optional[bool] = None,
         name_only: Optional[bool] = False,
         mode: Optional[int] = 0,
@@ -146,6 +147,7 @@ class ImmutaClient(LoggingMixin):
         params = {
             "searchText": search_text,
             "schema": search_schema,
+            "column": columns,
             "publicOnly": public_only,
             "nameOnly": name_only,
             "mode": mode,
@@ -378,6 +380,7 @@ class ImmutaClient(LoggingMixin):
         self,
         search_text=None,
         search_schema=None,
+        columns=None,
         public_only=None,
         name_only=False,
         mode=0,
@@ -387,6 +390,7 @@ class ImmutaClient(LoggingMixin):
         params = self.make_get_request_params(
             search_text=search_text,
             search_schema=search_schema,
+            columns=columns,
             public_only=public_only,
             name_only=name_only,
             mode=mode,
@@ -394,6 +398,10 @@ class ImmutaClient(LoggingMixin):
             offset=offset,
         )
         return self.get("dataSource", params=params)
+
+    def get_all_data_source_and_column_tags(self):
+        # note: this is not an official API endpoint
+        return self.get("governance/reports/tag/allUserDataSources")
 
     def get_data_source_by_name(self, name):
         endpoint = "dataSource/name/{}".format(name)
@@ -441,6 +449,11 @@ class ImmutaClient(LoggingMixin):
 
     def delete_global_policy(self, id: Optional[int]) -> bool:
         res = self.delete(f"policy/global/{id}", params={"policyId": id})
+        res.raise_for_status()
+        return True
+
+    def delete_data_source_tag(self, data_source_id: int, tag_name: str) -> bool:
+        res = self.delete(f"tag/datasource/{data_source_id}/{tag_name}")
         res.raise_for_status()
         return True
 
@@ -533,6 +546,20 @@ class ImmutaClient(LoggingMixin):
         """
         res = self._session.post(f"tag/datasource/{id}", json=tag_data)
         res.raise_for_status()
+        return True
+
+    def update_data_source_tags_in_bulk(
+        self, ids: List[int], tag_data: List[Dict[str, Any]]
+    ) -> bool:
+        """
+        Adds tags to a list of data sources.
+        :param ids: data source ids
+        :param tag_data: list of tag dicts to apply to the data sources
+        :return: True
+        """
+        self.put(
+            "dataSource/bulk/tags", data={"ids": ids, "update": {"tags": tag_data}}
+        )
         return True
 
     def get_remote_database_test_response(

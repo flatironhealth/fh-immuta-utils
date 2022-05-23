@@ -3,13 +3,11 @@ from collections import defaultdict
 import logging
 import os
 import glob
-from functools import partial
 from typing import Any, Dict, List, Iterator, Tuple, TYPE_CHECKING
 
 import yaml
 
 from pydantic import BaseModel
-from toolz.dicttoolz import keyfilter
 
 from .data_source import DataSourceColumn
 
@@ -17,6 +15,13 @@ if TYPE_CHECKING:
     from immuta_utils.client import ImmutaClient
 
 LOGGER = logging.getLogger(__name__)
+
+
+# Tags created by Immuta by default
+IMMUTA_SPECIAL_TAGS = {
+    "New",
+    "Skip Stats Job",
+}
 
 
 class Tag(BaseModel):
