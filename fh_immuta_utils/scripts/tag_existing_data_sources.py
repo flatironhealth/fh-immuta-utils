@@ -84,7 +84,9 @@ def main(
             )
 
     logging.info("Getting current data source and column tags")
+    # data_source_name: {tag_1_name, tag_2_name, ...}
     current_data_source_tag_names_map: Dict[str, Set[str]] = defaultdict(set)
+    # data_source_name: {column_1_name: {tag_1_name, tag_2_name, ...}, ...}
     current_column_tag_names_map: Dict[str, Dict[str, Set[str]]] = defaultdict(
         lambda: defaultdict(set)
     )
@@ -149,11 +151,8 @@ def main(
                 ],
             )
     logging.info("Updating removed data source tags")
-    progress_iterator = tqdm(
-        new_tag_name_to_data_source_ids.items(),
-        total=len(new_tag_name_to_data_source_ids),
-    )
-    for data_source_id, tag_name in tqdm(removed_tag_name_and_data_source_ids):
+    progress_iterator = tqdm(removed_tag_name_and_data_source_ids)
+    for data_source_id, tag_name in progress_iterator:
         progress_iterator.set_description(
             desc=f"[Removing Data Source Tag] ID: {data_source_id}, Tag: {tag_name}"
         )
@@ -161,12 +160,24 @@ def main(
             client.delete_data_source_tag(data_source_id, tag_name)
 
     logging.info("Determining data sources with new column tags")
-    data_sources_with_column_tags_to_update = set()
+    # Compute the columns and associated column tag names we want for each data source.
+    #
+    # Since we cannot get the set of all columns of a data source without making
+    # an Immuta API call for each data source (which would be expensive), we
+    # compute the set of all relevant columns for each data source by searching
+    # for all data sources with a given relevant column. E.g. if we want to tag
+    # all columns with name `example`, we find the relevant data sources by
+    # searching for data sources with the column `example`, rather than getting
+    # the set of all columns of all data sources and then filtering the data
+    # sources.
+    #
+    # data_source_name: {column_1_name: {tag_1_name, tag_2_name, ...}, ...}
+    wanted_column_tag_names_map: Dict[str, Dict[str, Set[str]]] = defaultdict(dict)
     for column in tqdm(
         tagger.tag_map_datadict.keys(),
         total=len(tagger.tag_map_datadict),
     ):
-        tag_names = tagger.get_tags_for_column(column)
+        tag_names = set(tagger.get_tags_for_column(column))
         with Paginator(
             client.get_data_source_list,
             search_text=search_text,
@@ -176,32 +187,33 @@ def main(
         ) as paginator:
             for data_source in paginator:
                 data_source_name = data_source["name"]
-                data_source_id = data_source["id"]
-                for tag_name in tag_names:
-                    if (
-                        tag_name
-                        not in current_column_tag_names_map[data_source_name][column]
-                    ):
-                        data_sources_with_column_tags_to_update.add(data_source_id)
+                wanted_column_tag_names_map[data_source_name][column] = tag_names
+
+    # Compute the data sources with column tags to update by checking if the current
+    # data dictionary matches the data dictionary we want.
+    data_sources_with_column_tags_to_update = set()
     for data_source in data_sources_to_tag:
         data_source_name = data_source["name"]
         data_source_id = data_source["id"]
-        wanted_column_tag_names = {
-            column: set(tagger.get_tags_for_column(column))
-            for column in current_column_tag_names_map[data_source_name].keys()
-        }
-        if current_column_tag_names_map[data_source_name] != wanted_column_tag_names:
+        if (
+            current_column_tag_names_map[data_source_name]
+            != wanted_column_tag_names_map[data_source_name]
+        ):
             data_sources_with_column_tags_to_update.add(data_source_id)
 
+    logging.info(
+        f"Updating {len(data_sources_with_column_tags_to_update)} data dictionaries with changed column tags"
+    )
     progress_iterator = tqdm(data_sources_to_tag)
     for data_source in progress_iterator:
         data_source_id = data_source["id"]
         data_source_name = data_source["name"]
-        if data_source_id not in data_sources_with_column_tags_to_update:
-            continue
         progress_iterator.set_description(
             desc=f"[Tagging Columns] ID: {data_source_id}, Name: {data_source_name} :"
         )
+
+        if data_source_id not in data_sources_with_column_tags_to_update:
+            continue
 
         dictionary = client.get_data_source_dictionary(id=data_source_id)
         enriched_columns = tagger.enrich_columns_with_tagging(dictionary.metadata)
