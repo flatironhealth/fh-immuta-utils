@@ -121,6 +121,7 @@ def main(config_file: str, glob_prefix: str, debug: bool, dry_run: bool) -> bool
                             schema_evolution=schema_evolution,
                         )
                         if response:
+                            # no connectionString in response if only one table in schema
                             if "connectionString" in response:
                                 connection_strings.add(response["connectionString"])
                         else:
