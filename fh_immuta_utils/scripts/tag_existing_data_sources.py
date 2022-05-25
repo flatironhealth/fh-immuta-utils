@@ -15,7 +15,7 @@ from tqdm import tqdm
 from fh_immuta_utils.client import get_client
 from fh_immuta_utils.config import parse_config
 from fh_immuta_utils.paginator import Paginator
-from fh_immuta_utils.tagging import IMMUTA_SPECIAL_TAGS, Tagger
+from fh_immuta_utils.tagging import IMMUTA_SPECIAL_TAGS, Tagger, Tag
 
 
 IMMUTA_API_PAGE_SIZE = 25_000
@@ -144,10 +144,7 @@ def main(
             client.update_data_source_tags_in_bulk(
                 ids=list(data_source_ids),
                 tag_data=[
-                    {
-                        "name": tag_name,
-                        "source": "curated",
-                    }
+                    Tag(tag_name=tag_name).dict()
                 ],
             )
     logging.info("Updating removed data source tags")
