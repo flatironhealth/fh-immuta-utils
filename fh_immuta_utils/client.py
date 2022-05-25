@@ -552,7 +552,9 @@ class ImmutaClient(LoggingMixin):
         self, ids: List[int], tag_data: List[Dict[str, Any]]
     ) -> bool:
         """
-        Adds tags to a list of data sources.
+        Adds tags to a list of data sources. This will apply all tags in tag_data to all data
+        the data sources corresponding to ids.
+
         :param ids: data source ids
         :param tag_data: list of tag dicts to apply to the data sources
         :return: True
