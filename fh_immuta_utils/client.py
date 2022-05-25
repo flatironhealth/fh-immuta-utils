@@ -312,8 +312,11 @@ class ImmutaClient(LoggingMixin):
         while True:
             try:
                 response = self.get(f"jobs?connectionString={connection_string}")
-                if int(response["pending"]) == 0:
+                n_pending_jobs = int(response["pending"])
+                if n_pending_jobs == 0:
                     return
+                else:
+                    self.log.info(f"{n_pending_jobs} jobs remaining for {connection_string}")
             except HTTPError:
                 pass
             time.sleep(check_interval)
