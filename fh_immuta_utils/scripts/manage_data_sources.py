@@ -3,6 +3,7 @@ import fnmatch
 import os
 import logging
 import glob
+import time
 from typing import (
     Callable,
     Dict,
@@ -69,6 +70,7 @@ def main(config_file: str, glob_prefix: str, debug: bool, dry_run: bool) -> bool
     dataset_spec_filepath = os.path.join(
         config["config_root"], "enrolled_datasets", glob_prefix
     )
+    connection_strings = set()
     LOGGER.debug(f"Globbing for files in {dataset_spec_filepath}")
     for filepath in glob.glob(dataset_spec_filepath):
         LOGGER.info("Processing file: %s", filepath)
@@ -112,18 +114,30 @@ def main(config_file: str, glob_prefix: str, debug: bool, dry_run: bool) -> bool
                             f"Unexpected type for handler; Got: {type(handler)}"
                         )
                     if not dry_run:
-                        if not create_data_source(
+                        response = create_data_source(
                             client=client,
                             data_source=data_source,
                             handler=handler,
                             schema_evolution=schema_evolution,
-                        ):
+                        )
+                        if response:
+                            connection_strings.add(response["connectionString"])
+                        else:
                             failed_tables.add(data_source.name)
         if failed_tables:
             no_enrollment_errors = False
             LOGGER.warning("Tables that failed creation:")
             for table in failed_tables:
                 LOGGER.warning(table)
+
+    # wait a moment for small datasets to fully enroll, as the check interval in the
+    # following loop is substantial (30 seconds).
+    time.sleep(5)
+    for connection_string in connection_strings:
+        LOGGER.info(
+            f"Waiting for enrollment of data sources with connection string {connection_string} to complete"
+        )
+        client.wait_for_data_source_creation_completion(connection_string)
 
     LOGGER.info("Finished enrollment")
     return no_enrollment_errors
@@ -217,17 +231,12 @@ def create_data_source(
     data_source: DataSource,
     handler: Union[Handler, List[Handler]],
     schema_evolution: SchemaEvolutionMetadata,
-) -> bool:
+) -> Optional[Dict[str, str]]:
     try:
-        result = client.create_data_source(data_source, handler, schema_evolution)
-        if result:
-            LOGGER.info(
-                "Created data source %s, id: %d", data_source.name, result["id"]
-            )
-        return True
+        return client.create_data_source(data_source, handler, schema_evolution)
     except requests.exceptions.HTTPError as err:
-        LOGGER.error("Error creating data source %s: %s", data_source.name, err)
-        return False
+        LOGGER.error("Error creating data source: %s", err)
+        return None
 
 
 def is_schema_evolution_enabled(
