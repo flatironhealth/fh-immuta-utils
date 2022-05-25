@@ -293,7 +293,6 @@ class ImmutaClient(LoggingMixin):
             f"{request_prefix}/handler", json=post_body
         )
         self.log.debug("Response: %s", handler_response.text)
-        # There's no ID given back for bulk create requests
         if handler_response.status_code == 200:
             return handler_response.json()
         if "already exists" in handler_response.text:
@@ -316,7 +315,9 @@ class ImmutaClient(LoggingMixin):
                 if n_pending_jobs == 0:
                     return
                 else:
-                    self.log.info(f"{n_pending_jobs} jobs remaining for {connection_string}")
+                    self.log.info(
+                        f"{n_pending_jobs} jobs remaining for {connection_string}"
+                    )
             except HTTPError:
                 pass
             time.sleep(check_interval)

@@ -121,7 +121,8 @@ def main(config_file: str, glob_prefix: str, debug: bool, dry_run: bool) -> bool
                             schema_evolution=schema_evolution,
                         )
                         if response:
-                            connection_strings.add(response["connectionString"])
+                            if "connectionString" in response:
+                                connection_strings.add(response["connectionString"])
                         else:
                             failed_tables.add(data_source.name)
         if failed_tables:
