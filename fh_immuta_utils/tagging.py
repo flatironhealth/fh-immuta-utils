@@ -11,10 +11,10 @@ import yaml
 from pydantic import BaseModel
 from toolz.dicttoolz import keyfilter
 
-from .data_source import DataSourceColumn
 
 if TYPE_CHECKING:
-    from immuta_utils.client import ImmutaClient
+    from .client import ImmutaClient
+    from .data_source import DataSourceColumn
 
 LOGGER = logging.getLogger(__name__)
 
@@ -22,6 +22,9 @@ LOGGER = logging.getLogger(__name__)
 class Tag(BaseModel):
     name: str
     source: str = "curated"
+
+
+SKIP_STATS_JOB_TAG = Tag(name="Skip Stats Job")
 
 
 class Tagger(object):
@@ -157,8 +160,8 @@ class Tagger(object):
             )
 
     def enrich_columns_with_tagging(
-        self, columns: List[DataSourceColumn]
-    ) -> List[DataSourceColumn]:
+        self, columns: List["DataSourceColumn"]
+    ) -> List["DataSourceColumn"]:
         """Append column tags to a pre-existing list of columns.
 
         Returns

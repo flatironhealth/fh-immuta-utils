@@ -1,11 +1,12 @@
 from collections import namedtuple
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 from unittest.mock import patch
 
 import pytest
 from pydantic import ValidationError
 
 import fh_immuta_utils.data_source as ds
+from fh_immuta_utils.tagging import SKIP_STATS_JOB_TAG
 from fh_immuta_utils.scripts.manage_data_sources import skip_dataset_enrollment
 
 NameTestKeys = namedtuple(
@@ -407,6 +408,10 @@ def test_to_immuta_objects(
         user_prefix="",
     )
     assert source.blobHandlerType == handler_type
+    if config.get("skip_stats_job", False):
+        assert SKIP_STATS_JOB_TAG.dict() in source.tags
+    else:
+        assert SKIP_STATS_JOB_TAG.dict() not in source.tags
     assert handler.metadata.bodataSchemaName == query_engine_target_schema
     assert isinstance(handler, ds.Handler)
     assert isinstance(handler.metadata, expected_type)
@@ -446,7 +451,7 @@ BULK_OBJECT_TESTS = [
         prefix_query_engine_names_with_handler=False,
     ),
     BulkObjectTestKeys(
-        db_keys={"hostname": "qux"},
+        db_keys={"hostname": "qux", "skip_stats_job": True},
         handler_type="Redshift",
         expected_type=ds.PostgresHandlerMetadata,
         tables=TABLES,
@@ -473,7 +478,7 @@ BULK_OBJECT_TESTS = [
         prefix_query_engine_names_with_handler=False,
     ),
     BulkObjectTestKeys(
-        db_keys={"hostname": "qux"},
+        db_keys={"hostname": "qux", "skip_stats_job": False},
         handler_type="Redshift",
         expected_type=ds.PostgresHandlerMetadata,
         tables=TABLES,
@@ -547,6 +552,10 @@ def test_make_bulk_create_objects(
     )
     assert len(handlers) == len(tables)
     assert source.blobHandlerType == handler_type
+    if config.get("skip_stats_job", False):
+        assert SKIP_STATS_JOB_TAG.dict() in source.tags
+    else:
+        assert SKIP_STATS_JOB_TAG.dict() not in source.tags
 
     table_names = []
     for handler in handlers:
