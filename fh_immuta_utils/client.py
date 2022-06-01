@@ -309,17 +309,18 @@ class ImmutaClient(LoggingMixin):
         are complete. Checks the condition once every `check_interval` seconds.
         """
         while True:
-            try:
-                response = self.get(f"jobs?connectionString={connection_string}")
-                n_pending_jobs = int(response["pending"])
-                if n_pending_jobs == 0:
-                    return
-                else:
-                    self.log.info(
-                        f"{n_pending_jobs} jobs remaining for {connection_string}"
-                    )
-            except HTTPError:
-                pass
+            response = self.get(f"jobs?connectionString={connection_string}")
+            # empty response indicates that no jobs with the given connection string have run recently
+            if len(response) == 0:
+                return
+
+            n_pending_jobs = int(response["pending"])
+            if n_pending_jobs == 0:
+                return
+            else:
+                self.log.info(
+                    f"{n_pending_jobs} jobs remaining for {connection_string}"
+                )
             time.sleep(check_interval)
 
     def update_data_source(
