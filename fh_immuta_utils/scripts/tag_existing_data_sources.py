@@ -143,9 +143,7 @@ def main(
         if not dry_run:
             client.update_data_source_tags_in_bulk(
                 ids=list(data_source_ids),
-                tag_data=[
-                    Tag(tag_name=tag_name).dict()
-                ],
+                tag_data=[Tag(tag_name=tag_name).dict()],
             )
     logging.info("Updating removed data source tags")
     progress_iterator = tqdm(removed_tag_name_and_data_source_ids)
