@@ -15,7 +15,7 @@ from tqdm import tqdm
 from fh_immuta_utils.client import get_client
 from fh_immuta_utils.config import parse_config
 from fh_immuta_utils.paginator import Paginator
-from fh_immuta_utils.tagging import IMMUTA_SPECIAL_TAGS, Tagger, Tag
+from fh_immuta_utils.tagging import Tagger, Tag
 
 
 IMMUTA_API_PAGE_SIZE = 25_000
@@ -90,18 +90,24 @@ def main(
     current_column_tag_names_map: Dict[str, Dict[str, Set[str]]] = defaultdict(
         lambda: defaultdict(set)
     )
-    for tag_info in client.get_all_data_source_and_column_tags()["hits"]:
-        data_source = tag_info["Data Source"]
-        tag_name = tag_info["Tag Name"]
-        column_name = tag_info["Column Name"]
+    all_tags = {
+        tag_info["name"]
+        for tag_info in client.get_tags()
+        if not tag_info.get("systemCreated", False)
+    }
+    # We cannot directly paginate the results from the endpoint to get tag info, so
+    # we "paginate" by tag by searching for info on each tag individually
+    for tag_name in all_tags:
+        for tag_info in client.get_data_source_and_column_tag_info(tag_name):
+            data_source = tag_info["Data Source"]
+            column_name = tag_info["Column Name"]
 
-        if tag_name in IMMUTA_SPECIAL_TAGS:
-            continue
+            assert tag_info["Tag Name"] == tag_name
 
-        if tag_info["Type"] == "Data Source":
-            current_data_source_tag_names_map[data_source].add(tag_name)
-        elif tag_info["Type"] == "Column":
-            current_column_tag_names_map[data_source][column_name].add(tag_name)
+            if tag_info["Type"] == "Data Source":
+                current_data_source_tag_names_map[data_source].add(tag_name)
+            elif tag_info["Type"] == "Column":
+                current_column_tag_names_map[data_source][column_name].add(tag_name)
 
     logging.info("Determining changes in data source tags")
     new_tag_name_to_data_source_ids: Dict[str, Set[int]] = defaultdict(set)
@@ -143,7 +149,7 @@ def main(
         if not dry_run:
             client.update_data_source_tags_in_bulk(
                 ids=list(data_source_ids),
-                tag_data=[Tag(tag_name=tag_name).dict()],
+                tag_data=[Tag(name=tag_name).dict()],
             )
     logging.info("Updating removed data source tags")
     progress_iterator = tqdm(removed_tag_name_and_data_source_ids)

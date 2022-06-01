@@ -17,13 +17,6 @@ if TYPE_CHECKING:
 LOGGER = logging.getLogger(__name__)
 
 
-# Tags created by Immuta by default
-IMMUTA_SPECIAL_TAGS = {
-    "New",
-    "Skip Stats Job",
-}
-
-
 class Tag(BaseModel):
     name: str
     source: str = "curated"

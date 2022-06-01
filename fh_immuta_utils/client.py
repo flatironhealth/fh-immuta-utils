@@ -399,9 +399,28 @@ class ImmutaClient(LoggingMixin):
         )
         return self.get("dataSource", params=params)
 
-    def get_all_data_source_and_column_tags(self):
-        # note: this is not an official API endpoint
-        return self.get("governance/reports/tag/allUserDataSources")
+    def get_tags(self):
+        return self.get("tag")
+
+    def get_data_source_and_column_tag_info(
+        self, tag_name: Optional[str] = None
+    ) -> List[Dict[str, str]]:
+        """
+        Get info on tagged data sources and columns. If `tag_name` is not None, returns data for only
+        the data sources and columns tagged with `tag_name`.
+
+        Returns a dict for every matching data source and column. Each dict contains at least
+        the following keys:
+           - Type (Data Source or Column)
+           - Data Source
+           - Column Name (value may be N/A)
+           - Tag Name
+        """
+        # note: these are not official API endpoints
+        if tag_name is None:
+            return self.get("governance/reports/tag/allUserDataSources")["hits"]
+        else:
+            return self.get(f"governance/reports/tag/{tag_name}/dataSource")["hits"]
 
     def get_data_source_by_name(self, name):
         endpoint = "dataSource/name/{}".format(name)
