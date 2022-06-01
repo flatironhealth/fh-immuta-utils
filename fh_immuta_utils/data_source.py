@@ -3,6 +3,8 @@ import logging
 
 from pydantic import BaseModel, Field
 
+from .tagging import SKIP_STATS_JOB_TAG
+
 LOGGER = logging.getLogger(__name__)
 
 HANDLER_TYPES = {
@@ -130,6 +132,8 @@ class DataSource(BaseModel):
     # or queryable (metadata is dynamically queried)
     type: str = "queryable"
     useDatesAsDirectory: bool = False
+    # Tags for the Data Source
+    tags: List[Dict[str, str]] = []
 
 
 class SchemaEvolutionMetadataConfigTemplate(BaseModel):
@@ -262,7 +266,10 @@ def make_bulk_create_objects(
         handlers.append(handler)
 
     ds = DataSource(
-        blobHandlerType=config["handler_type"], recordFormat="json", type="queryable"
+        blobHandlerType=config["handler_type"],
+        recordFormat="json",
+        type="queryable",
+        tags=[SKIP_STATS_JOB_TAG.dict()] if config.get("skip_stats_job", False) else [],
     )
     schema_evolution = make_schema_evolution_metadata(config)
 
@@ -316,6 +323,7 @@ def to_immuta_objects(
         # category="foo",
         description="bar",
         # owner="foo",
+        tags=[SKIP_STATS_JOB_TAG.dict()] if config.get("skip_stats_job", False) else [],
     )
     schema_evolution = make_schema_evolution_metadata(config)
 
