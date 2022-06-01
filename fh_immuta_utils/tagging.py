@@ -3,13 +3,11 @@ from collections import defaultdict
 import logging
 import os
 import glob
-from functools import partial
 from typing import Any, Dict, List, Iterator, Tuple, TYPE_CHECKING
 
 import yaml
 
 from pydantic import BaseModel
-from toolz.dicttoolz import keyfilter
 
 
 if TYPE_CHECKING:
