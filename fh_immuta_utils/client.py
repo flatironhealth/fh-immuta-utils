@@ -9,6 +9,7 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
+import time
 from typing import Optional, List, Dict, Any, Union, Sequence, Iterator
 
 import requests
@@ -268,9 +269,7 @@ class ImmutaClient(LoggingMixin):
         handler: Union[Handler, Sequence[Handler]],
         schema_evolution: SchemaEvolutionMetadata,
         policy_handler=None,
-        handler_base_url=None,
-        dictionary=None,
-    ):
+    ) -> Optional[Dict[str, str]]:
         request_prefix = blob_handler_type(data_source.blobHandlerType)
         is_bulk_insert = isinstance(handler, list)
         if is_bulk_insert:
@@ -296,16 +295,35 @@ class ImmutaClient(LoggingMixin):
             f"{request_prefix}/handler", json=post_body
         )
         self.log.debug("Response: %s", handler_response.text)
-        # There's no ID given back for bulk create requests
         if handler_response.status_code == 200:
-            if not is_bulk_insert:
-                return self.get_data_source(handler_response.json()["dataSourceId"])
-            return None
+            return handler_response.json()
         if "already exists" in handler_response.text:
             self.log.info("Data source with name %s already exists", data_source.name)
             return None
         self.log.error("Error: %s", handler_response.text)
         handler_response.raise_for_status()
+
+    def wait_for_data_source_creation_completion(
+        self, connection_string: str, check_interval: int = 30
+    ) -> None:
+        """
+        Returns when the jobs for creating data sources with connection string `connection_string`
+        are complete. Checks the condition once every `check_interval` seconds.
+        """
+        while True:
+            response = self.get(f"jobs?connectionString={connection_string}")
+            # empty response indicates that no jobs with the given connection string have run recently
+            if len(response) == 0:
+                return
+
+            n_pending_jobs = int(response["pending"])
+            if n_pending_jobs == 0:
+                return
+            else:
+                self.log.info(
+                    f"{n_pending_jobs} jobs remaining for {connection_string}"
+                )
+            time.sleep(check_interval)
 
     def update_data_source(
         self,
